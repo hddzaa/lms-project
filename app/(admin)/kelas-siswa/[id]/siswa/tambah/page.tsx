@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ChevronDown, User, IdCard, Mail, Users2 } from "lucide-react";
+import { ChevronDown, User, IdCard, Mail, Users2, Lock, Eye, EyeOff } from "lucide-react";
 import { getKelasById, addSiswa } from "@/lib/dummy-data";
 import SuccessModal from "@/components/ui/SuccessModal";
 
@@ -16,6 +16,8 @@ export default function TambahSiswaPage() {
   const [nis, setNis] = useState("");
   const [email, setEmail] = useState("");
   const [gender, setGender] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
   if (!kelas) {
@@ -31,12 +33,13 @@ export default function TambahSiswaPage() {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!nama || !nis || !gender) return;
+    if (!nama || !nis || !gender || !password) return;
     addSiswa(kelas!.id, {
       nama,
       nis,
       email: email || `${nama.split(" ")[0].toLowerCase()}@aetheris.edu`,
       gender: gender as "Laki-laki" | "Perempuan",
+      password,
     });
     setShowSuccess(true);
   }
@@ -132,6 +135,28 @@ export default function TambahSiswaPage() {
                   className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-muted"
                 />
               </div>
+            </div>
+          </div>
+
+          <div className="mt-6">
+            <label className="mb-2 flex items-center gap-1.5 text-sm font-medium text-gray-300">
+              <Lock size={14} /> Password
+            </label>
+            <div className="relative">
+              <input
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                type={showPassword ? "text" : "password"}
+                placeholder="Minimal 6 karakter"
+                className="w-full rounded-xl border border-border bg-black/30 px-4 py-3 pr-11 text-sm text-gray-200 placeholder-gray-500 outline-none focus:border-primary/50"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-muted hover:text-gray-300"
+              >
+                {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+              </button>
             </div>
           </div>
 

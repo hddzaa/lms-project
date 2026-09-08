@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ChevronDown, User, IdCard, Mail, Users2 } from "lucide-react";
+import { ChevronDown, User, IdCard, Mail, Users2, Lock, Eye, EyeOff } from "lucide-react";
 import { getKelasById, siswaByKelas, updateSiswa } from "@/lib/dummy-data";
 import Toast from "@/components/ui/Toast";
 
@@ -17,6 +17,8 @@ export default function EditSiswaPage() {
     const [nis, setNis] = useState(siswa?.nis ?? "");
     const [email, setEmail] = useState(siswa?.email ?? "");
     const [gender, setGender] = useState(siswa?.gender ?? "Laki-laki");
+    const [password, setPassword] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
     const [showToast, setShowToast] = useState(false);
 
     if (!kelas || !siswa) {
@@ -37,6 +39,7 @@ export default function EditSiswaPage() {
             nis,
             email,
             gender: gender as "Laki-laki" | "Perempuan",
+            ...(password ? { password } : {}),
         });
         setShowToast(true);
     }

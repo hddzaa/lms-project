@@ -15,6 +15,7 @@ export type Siswa = {
   nis: string;
   email: string;
   gender: "Laki-laki" | "Perempuan";
+  password: string;
 };
 
 export const waliKelasOptions = [
@@ -34,10 +35,10 @@ export let kelasList: Kelas[] = [
 
 export let siswaByKelas: Record<string, Siswa[]> = {
   "1": [
-    { id: "s1", nama: "Aditya Surya Pratama", nis: "202401001", email: "aditya.surya@aetheris.edu", gender: "Laki-laki" },
-    { id: "s2", nama: "Bella Novita Sari", nis: "202401002", email: "bella.novita@aetheris.edu", gender: "Perempuan" },
-    { id: "s3", nama: "Dimas Ramadhan", nis: "202401003", email: "dimas.ramadhan@aetheris.edu", gender: "Laki-laki" },
-    { id: "s4", nama: "Elena Laksmi", nis: "202401004", email: "elena.laksmi@aetheris.edu", gender: "Perempuan" },
+    { id: "s1", nama: "Aditya Surya Pratama", nis: "202401001", email: "aditya.surya@aetheris.edu", gender: "Laki-laki", password: "siswa123" },
+    { id: "s2", nama: "Bella Novita Sari", nis: "202401002", email: "bella.novita@aetheris.edu", gender: "Perempuan", password: "siswa123" },
+    { id: "s3", nama: "Dimas Ramadhan", nis: "202401003", email: "dimas.ramadhan@aetheris.edu", gender: "Laki-laki", password: "siswa123" },
+    { id: "s4", nama: "Elena Laksmi", nis: "202401004", email: "elena.laksmi@aetheris.edu", gender: "Perempuan", password: "siswa123" },
   ],
 };
 
@@ -108,6 +109,7 @@ export type Guru = {
   nip: string;
   email: string;
   mapel: string;
+  password: string;
 };
 
 export type MataPelajaran = {
@@ -117,9 +119,9 @@ export type MataPelajaran = {
 };
 
 export let guruList: Guru[] = [
-  { id: "g1", nama: "Ahmad Hidayat, S.Pd., M.Si.", nip: "198005122005011004", email: "ahmad.h@aetheris.edu", mapel: "Matematika" },
-  { id: "g2", nama: "Siti Wahyuni, M.Pd.", nip: "198511202010012008", email: "siti.w@aetheris.edu", mapel: "Bahasa Inggris" },
-  { id: "g3", nama: "Budi Pratama, S.Kom.", nip: "199003152015041002", email: "budi.p@aetheris.edu", mapel: "Informatika" },
+  { id: "g1", nama: "Ahmad Hidayat, S.Pd., M.Si.", nip: "198005122005011004", email: "ahmad.h@aetheris.edu", mapel: "Matematika", password: "guru123" },
+  { id: "g2", nama: "Siti Wahyuni, M.Pd.", nip: "198511202010012008", email: "siti.w@aetheris.edu", mapel: "Bahasa Inggris", password: "guru123" },
+  { id: "g3", nama: "Budi Pratama, S.Kom.", nip: "199003152015041002", email: "budi.p@aetheris.edu", mapel: "Informatika", password: "guru123" },
 ];
 
 export let mapelList: MataPelajaran[] = [
@@ -134,6 +136,10 @@ export function addGuru(data: Omit<Guru, "id">) {
   const newGuru: Guru = { id: `g${guruIdCounter}`, ...data };
   guruList = [...guruList, newGuru];
   return newGuru;
+}
+
+export function getGuruById(id: string) {
+  return guruList.find((g) => g.id === id);
 }
 
 export function updateGuru(id: string, data: Partial<Guru>) {
@@ -192,4 +198,65 @@ const avatarColors = [
 
 export function getAvatarColor(index: number) {
   return avatarColors[index % avatarColors.length];
+}
+
+// ===== Aktivitas Guru =====
+
+export type JenisAktivitas = "Upload Materi" | "Membuat Assessment" | "Menilai Tugas";
+
+export type AktivitasGuru = {
+  id: string;
+  tanggal: string;
+  waktu: string;
+  idGuru: string;
+  namaGuru: string;
+  jenis: JenisAktivitas;
+  keterangan: string;
+};
+
+export const aktivitasGuruList: AktivitasGuru[] = [
+  { id: "a1", tanggal: "12 Agustus 2026", waktu: "08:30", idGuru: "GR001", namaGuru: "Budi Santoso", jenis: "Upload Materi", keterangan: "Pemrograman Web" },
+  { id: "a2", tanggal: "12 Agustus 2026", waktu: "09:15", idGuru: "GR002", namaGuru: "Andi Pratama", jenis: "Membuat Assessment", keterangan: "Kuis HTML" },
+  { id: "a3", tanggal: "12 Agustus 2026", waktu: "10:20", idGuru: "GR001", namaGuru: "Budi Santoso", jenis: "Menilai Tugas", keterangan: "Project Website" },
+  { id: "a4", tanggal: "11 Agustus 2026", waktu: "14:30", idGuru: "GR001", namaGuru: "Budi Santoso", jenis: "Upload Materi", keterangan: "JavaScript Dasar" },
+  { id: "a5", tanggal: "11 Agustus 2026", waktu: "11:00", idGuru: "GR002", namaGuru: "Andi Pratama", jenis: "Upload Materi", keterangan: "Struktur Data" },
+  { id: "a6", tanggal: "10 Agustus 2026", waktu: "13:45", idGuru: "GR002", namaGuru: "Andi Pratama", jenis: "Menilai Tugas", keterangan: "Tugas Query SQL" },
+];
+
+export type GuruProfile = {
+  idGuru: string;
+  namaGuru: string;
+  mapel: string;
+  email: string;
+};
+
+export const guruProfiles: GuruProfile[] = [
+  { idGuru: "GR001", namaGuru: "Budi Santoso", mapel: "Pemrograman Web", email: "budi.santoso@example.com" },
+  { idGuru: "GR002", namaGuru: "Andi Pratama", mapel: "Basis Data", email: "andi.pratama@example.com" },
+];
+
+export function getGuruProfile(idGuru: string) {
+  return guruProfiles.find((g) => g.idGuru === idGuru);
+}
+
+export function getRiwayatByGuru(idGuru: string) {
+  return aktivitasGuruList.filter((a) => a.idGuru === idGuru);
+}
+
+const jenisBadgeMap: Record<JenisAktivitas, string> = {
+  "Upload Materi": "bg-cyan-400/10 text-cyan-300",
+  "Membuat Assessment": "bg-violet-400/10 text-violet-300",
+  "Menilai Tugas": "bg-indigo-400/10 text-indigo-300",
+};
+export function getJenisBadge(jenis: JenisAktivitas) {
+  return jenisBadgeMap[jenis];
+}
+
+const jenisDotMap: Record<JenisAktivitas, string> = {
+  "Upload Materi": "bg-cyan-300",
+  "Membuat Assessment": "bg-violet-300",
+  "Menilai Tugas": "bg-indigo-300",
+};
+export function getJenisDot(jenis: JenisAktivitas) {
+  return jenisDotMap[jenis];
 }

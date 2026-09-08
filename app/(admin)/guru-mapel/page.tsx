@@ -19,8 +19,8 @@ import {
   type Guru,
   type MataPelajaran,
 } from "@/lib/dummy-data";
-import GuruModal from "@/components/guru-mapel/GuruModal";
-import MapelModal from "@/components/guru-mapel/MapelModal";
+import Link from "next/link";
+import MapelModal from "@/components/guru-mapel(admin)/MapelModal";
 import ConfirmDeleteModal from "@/components/ui/ConfirmDeleteModal";
 import Toast from "@/components/ui/Toast";
 
@@ -32,8 +32,7 @@ export default function GuruMapelPage() {
   const [mapel, setMapel] = useState(initialMapelList);
   const [search, setSearch] = useState("");
 
-  const [showGuruModal, setShowGuruModal] = useState(false);
-  const [editGuru, setEditGuru] = useState<Guru | null>(null);
+
   const [showMapelModal, setShowMapelModal] = useState(false);
   const [editMapel, setEditMapel] = useState<MataPelajaran | null>(null);
 
@@ -49,19 +48,6 @@ export default function GuruMapelPage() {
     setToast({ open: true, message });
   }
 
-  function handleGuruSubmit(data: Omit<Guru, "id">) {
-    if (editGuru) {
-      updateGuru(editGuru.id, data);
-      setGuru((prev) => prev.map((g) => (g.id === editGuru.id ? { ...g, ...data } : g)));
-      showToast("Perubahan berhasil disimpan");
-    } else {
-      const newGuru = addGuru(data);
-      setGuru((prev) => [...prev, newGuru]);
-      showToast("Guru berhasil ditambahkan");
-    }
-    setShowGuruModal(false);
-    setEditGuru(null);
-  }
 
   function handleMapelSubmit(data: Omit<MataPelajaran, "id">) {
     if (editMapel) {
@@ -107,17 +93,15 @@ export default function GuruMapelPage() {
       >
         <button
           onClick={() => { setTab("guru"); setSearch(""); }}
-          className={`flex items-center gap-2 rounded-xl px-5 py-2 text-sm font-medium transition-colors ${
-            tab === "guru" ? "bg-primary-soft text-primary" : "text-gray-400 hover:text-gray-200"
-          }`}
+          className={`flex items-center gap-2 rounded-xl px-5 py-2 text-sm font-medium transition-colors ${tab === "guru" ? "bg-primary-soft text-primary" : "text-gray-400 hover:text-gray-200"
+            }`}
         >
           <User size={15} /> Guru
         </button>
         <button
           onClick={() => { setTab("mapel"); setSearch(""); }}
-          className={`flex items-center gap-2 rounded-xl px-5 py-2 text-sm font-medium transition-colors ${
-            tab === "mapel" ? "bg-primary-soft text-primary" : "text-gray-400 hover:text-gray-200"
-          }`}
+          className={`flex items-center gap-2 rounded-xl px-5 py-2 text-sm font-medium transition-colors ${tab === "mapel" ? "bg-primary-soft text-primary" : "text-gray-400 hover:text-gray-200"
+            }`}
         >
           <FileText size={15} /> Mata Pelajaran
         </button>
@@ -140,12 +124,12 @@ export default function GuruMapelPage() {
             <Filter size={15} /> Filter
           </button>
           {tab === "guru" ? (
-            <button
-              onClick={() => { setEditGuru(null); setShowGuruModal(true); }}
+            <Link
+              href="/guru-mapel/tambah-guru"
               className="flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-bg transition-transform hover:scale-105"
             >
               <Plus size={16} /> Tambah Guru
-            </button>
+            </Link>
           ) : (
             <button
               onClick={() => { setEditMapel(null); setShowMapelModal(true); }}
@@ -190,9 +174,9 @@ export default function GuruMapelPage() {
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center justify-end gap-3">
-                      <button onClick={() => { setEditGuru(g); setShowGuruModal(true); }} className="text-gray-400 transition-transform hover:scale-110 hover:text-gray-200">
+                      <Link href={`/guru-mapel/${g.id}/edit`} className="text-gray-400 transition-transform hover:scale-110 hover:text-gray-200">
                         <Pencil size={16} />
-                      </button>
+                      </Link>
                       <button onClick={() => setDeleteTarget({ kind: "guru", data: g })} className="text-red-400 transition-transform hover:scale-110 hover:text-red-300">
                         <Trash2 size={16} />
                       </button>
@@ -267,13 +251,6 @@ export default function GuruMapelPage() {
         </div>
       </div>
 
-      <GuruModal
-        open={showGuruModal}
-        onClose={() => { setShowGuruModal(false); setEditGuru(null); }}
-        onSubmit={handleGuruSubmit}
-        initialData={editGuru}
-        mapelOptions={getMapelNames()}
-      />
 
       <MapelModal
         open={showMapelModal}
@@ -291,8 +268,8 @@ export default function GuruMapelPage() {
           deleteTarget?.kind === "guru"
             ? `guru ${deleteTarget.data.nama}`
             : deleteTarget?.kind === "mapel"
-            ? `mata pelajaran ${deleteTarget.data.nama}`
-            : "data ini"
+              ? `mata pelajaran ${deleteTarget.data.nama}`
+              : "data ini"
         }
       />
 
