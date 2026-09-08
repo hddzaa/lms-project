@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ChevronDown, AlertCircle } from "lucide-react";
-import { guruList, addKelas } from "@/lib/dummy-data";
+import { waliKelasOptions, addKelas } from "@/lib/dummy-data";
 import SuccessModal from "@/components/ui/SuccessModal";
 
 type FormErrors = {
@@ -119,7 +119,7 @@ export default function TambahKelasPage() {
             <option value="" disabled>
               Pilih Guru Pengampu
             </option>
-            {guruList.map((g) => (
+            {waliKelasOptions.map((g) => (
               <option key={g} value={g}>
                 {g}
               </option>

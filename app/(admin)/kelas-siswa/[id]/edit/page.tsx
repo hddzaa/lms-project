@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { ChevronDown } from "lucide-react";
-import { guruList, getKelasById, updateKelas } from "@/lib/dummy-data";
+import { waliKelasOptions, getKelasById, updateKelas } from "@/lib/dummy-data";
 import Toast from "@/components/ui/Toast";
 
 export default function EditKelasPage() {
@@ -77,7 +77,7 @@ export default function EditKelasPage() {
             onChange={(e) => setWali(e.target.value)}
             className="w-full appearance-none rounded-xl border border-border bg-black/30 px-4 py-3 text-sm text-gray-200 outline-none focus:border-primary/50"
           >
-            {guruList.map((g) => (
+            {waliKelasOptions.map((g) => (
               <option key={g} value={g}>
                 {g}
               </option>
