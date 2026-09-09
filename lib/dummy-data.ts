@@ -202,10 +202,11 @@ export function getAvatarColor(index: number) {
 
 // ===== Aktivitas Guru =====
 
-export type JenisAktivitas = "Upload Materi" | "Membuat Assessment" | "Menilai Tugas";
+export type JenisAktivitas = "Upload Materi" | "Membuat Assessment" | "Menilai Tugas" | "Mengedit Assessment";
 
 export type AktivitasGuru = {
   id: string;
+  tanggalISO: string;
   tanggal: string;
   waktu: string;
   idGuru: string;
@@ -215,12 +216,13 @@ export type AktivitasGuru = {
 };
 
 export const aktivitasGuruList: AktivitasGuru[] = [
-  { id: "a1", tanggal: "12 Agustus 2026", waktu: "08:30", idGuru: "GR001", namaGuru: "Budi Santoso", jenis: "Upload Materi", keterangan: "Pemrograman Web" },
-  { id: "a2", tanggal: "12 Agustus 2026", waktu: "09:15", idGuru: "GR002", namaGuru: "Andi Pratama", jenis: "Membuat Assessment", keterangan: "Kuis HTML" },
-  { id: "a3", tanggal: "12 Agustus 2026", waktu: "10:20", idGuru: "GR001", namaGuru: "Budi Santoso", jenis: "Menilai Tugas", keterangan: "Project Website" },
-  { id: "a4", tanggal: "11 Agustus 2026", waktu: "14:30", idGuru: "GR001", namaGuru: "Budi Santoso", jenis: "Upload Materi", keterangan: "JavaScript Dasar" },
-  { id: "a5", tanggal: "11 Agustus 2026", waktu: "11:00", idGuru: "GR002", namaGuru: "Andi Pratama", jenis: "Upload Materi", keterangan: "Struktur Data" },
-  { id: "a6", tanggal: "10 Agustus 2026", waktu: "13:45", idGuru: "GR002", namaGuru: "Andi Pratama", jenis: "Menilai Tugas", keterangan: "Tugas Query SQL" },
+  { id: "a1", tanggalISO: "2026-08-12", tanggal: "12 Agustus 2026", waktu: "08:30", idGuru: "GR001", namaGuru: "Budi Santoso", jenis: "Upload Materi", keterangan: "Pemrograman Web" },
+  { id: "a2", tanggalISO: "2026-08-12", tanggal: "12 Agustus 2026", waktu: "09:15", idGuru: "GR002", namaGuru: "Andi Pratama", jenis: "Membuat Assessment", keterangan: "Kuis HTML" },
+  { id: "a3", tanggalISO: "2026-08-12", tanggal: "12 Agustus 2026", waktu: "10:20", idGuru: "GR001", namaGuru: "Budi Santoso", jenis: "Menilai Tugas", keterangan: "Project Website" },
+  { id: "a4", tanggalISO: "2026-08-11", tanggal: "11 Agustus 2026", waktu: "14:30", idGuru: "GR001", namaGuru: "Budi Santoso", jenis: "Upload Materi", keterangan: "JavaScript Dasar" },
+  { id: "a5", tanggalISO: "2026-08-11", tanggal: "11 Agustus 2026", waktu: "11:00", idGuru: "GR002", namaGuru: "Andi Pratama", jenis: "Upload Materi", keterangan: "Struktur Data" },
+  { id: "a6", tanggalISO: "2026-08-10", tanggal: "10 Agustus 2026", waktu: "13:45", idGuru: "GR002", namaGuru: "Andi Pratama", jenis: "Menilai Tugas", keterangan: "Tugas Query SQL" },
+  { id: "a7", tanggalISO: "2026-08-10", tanggal: "10 Agustus 2026", waktu: "15:00", idGuru: "GR001", namaGuru: "Budi Santoso", jenis: "Mengedit Assessment", keterangan: "Revisi Soal Kuis HTML" },
 ];
 
 export type GuruProfile = {
@@ -247,6 +249,7 @@ const jenisBadgeMap: Record<JenisAktivitas, string> = {
   "Upload Materi": "bg-cyan-400/10 text-cyan-300",
   "Membuat Assessment": "bg-violet-400/10 text-violet-300",
   "Menilai Tugas": "bg-indigo-400/10 text-indigo-300",
+  "Mengedit Assessment": "bg-rose-400/10 text-rose-300",
 };
 export function getJenisBadge(jenis: JenisAktivitas) {
   return jenisBadgeMap[jenis];
@@ -256,7 +259,50 @@ const jenisDotMap: Record<JenisAktivitas, string> = {
   "Upload Materi": "bg-cyan-300",
   "Membuat Assessment": "bg-violet-300",
   "Menilai Tugas": "bg-indigo-300",
+  "Mengedit Assessment": "bg-rose-300",
 };
 export function getJenisDot(jenis: JenisAktivitas) {
   return jenisDotMap[jenis];
+}
+
+export function getUniqueGuruNamesFromAktivitas() {
+  return Array.from(new Set(aktivitasGuruList.map((a) => a.namaGuru)));
+}
+
+// ===== Aktivitas Siswa (untuk Rekap) =====
+
+export type JenisAktivitasSiswa = "Mengerjakan Assessment" | "Melihat Materi" | "Mengumpulkan Tugas" | "Melihat Nilai";
+
+export type AktivitasSiswaLog = {
+  id: string;
+  tanggalISO: string;
+  tanggal: string;
+  waktu: string;
+  idSiswa: string;
+  namaSiswa: string;
+  kelas: string;
+  jenis: JenisAktivitasSiswa;
+  keterangan: string;
+};
+
+export const aktivitasSiswaLogList: AktivitasSiswaLog[] = [
+  { id: "as1", tanggalISO: "2026-08-24", tanggal: "24 Agustus 2026", waktu: "08:30", idSiswa: "102938", namaSiswa: "Budi Santoso", kelas: "10 MIPA 1", jenis: "Mengerjakan Assessment", keterangan: "Ujian Tengah Semester Fisika - Selesai dalam 45 menit." },
+  { id: "as2", tanggalISO: "2026-08-24", tanggal: "24 Agustus 2026", waktu: "09:15", idSiswa: "102945", namaSiswa: "Siti Aminah", kelas: "11 IPS 2", jenis: "Melihat Materi", keterangan: "Modul 3: Sejarah Kemerdekaan Indonesia." },
+  { id: "as3", tanggalISO: "2026-08-24", tanggal: "24 Agustus 2026", waktu: "10:05", idSiswa: "102938", namaSiswa: "Budi Santoso", kelas: "10 MIPA 1", jenis: "Mengumpulkan Tugas", keterangan: "Tugas Makalah Biologi Bab 4 (Tepat waktu)." },
+  { id: "as4", tanggalISO: "2026-08-24", tanggal: "24 Agustus 2026", waktu: "11:30", idSiswa: "103001", namaSiswa: "Andi Wijaya", kelas: "12 Bahasa", jenis: "Melihat Nilai", keterangan: "Melihat hasil kuis Bahasa Inggris (Nilai: 85)." },
+  { id: "as5", tanggalISO: "2026-08-23", tanggal: "23 Agustus 2026", waktu: "13:00", idSiswa: "102945", namaSiswa: "Siti Aminah", kelas: "11 IPS 2", jenis: "Mengerjakan Assessment", keterangan: "Kuis Ekonomi Bab 2." },
+];
+
+const jenisBadgeSiswaMap: Record<JenisAktivitasSiswa, string> = {
+  "Mengerjakan Assessment": "bg-emerald-400/10 text-emerald-300",
+  "Melihat Materi": "bg-violet-400/10 text-violet-300",
+  "Mengumpulkan Tugas": "bg-fuchsia-400/10 text-fuchsia-300",
+  "Melihat Nilai": "bg-white/10 text-gray-300",
+};
+export function getJenisBadgeSiswa(jenis: JenisAktivitasSiswa) {
+  return jenisBadgeSiswaMap[jenis];
+}
+
+export function getUniqueSiswaNamesFromAktivitas() {
+  return Array.from(new Set(aktivitasSiswaLogList.map((a) => a.namaSiswa)));
 }
