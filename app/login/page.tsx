@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Sparkles, Eye, EyeOff, Lock, AtSign, ChevronDown } from "lucide-react";
+import { signIn } from "next-auth/react";
 
 type Role = "siswa" | "guru" | "admin" | "kepsek" | "kurikulum";
 
@@ -31,7 +32,7 @@ export default function LoginPage() {
 
     const isPetugasActive = ["admin", "kepsek", "kurikulum"].includes(role);
 
-    function handleSubmit(e: React.FormEvent) {
+    async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
         setError("");
 
@@ -40,11 +41,16 @@ export default function LoginPage() {
             return;
         }
 
-        // TODO: ganti dengan pemanggilan API/NextAuth beneran setelah backend siap
-        if (id === "admin" && password === "admin123") {
-            router.push("/dashboard");
-        } else {
+        const result = await signIn("credentials", {
+            username: id,
+            password,
+            redirect: false,
+        });
+
+        if (result?.error) {
             setError("ID atau kata sandi salah.");
+        } else {
+            router.push("/dashboard");
         }
     }
 
@@ -190,25 +196,24 @@ export default function LoginPage() {
 }
 
 function RoleButton({
-  children,
-  active,
-  onClick,
+    children,
+    active,
+    onClick,
 }: {
-  children: React.ReactNode;
-  active: boolean;
-  onClick: () => void;
+    children: React.ReactNode;
+    active: boolean;
+    onClick: () => void;
 }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`flex items-center gap-1.5 rounded-lg border px-4 py-2 text-xs font-semibold tracking-wide transition-all duration-200 ${
-        active
-          ? "border-primary/50 bg-primary-soft text-primary"
-          : "border-border bg-black/30 text-gray-400 hover:text-gray-200"
-      }`}
-    >
-      {children}
-    </button>
-  );
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            className={`flex items-center gap-1.5 rounded-lg border px-4 py-2 text-xs font-semibold tracking-wide transition-all duration-200 ${active
+                    ? "border-primary/50 bg-primary-soft text-primary"
+                    : "border-border bg-black/30 text-gray-400 hover:text-gray-200"
+                }`}
+        >
+            {children}
+        </button>
+    );
 }

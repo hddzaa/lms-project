@@ -10,6 +10,7 @@ import {
   BarChart3,
   LogOut,
 } from "lucide-react";
+import { signOut } from "next-auth/react";
 
 const navItems = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -53,7 +54,9 @@ export default function Sidebar() {
         </nav>
       </div>
 
-      <button className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-orange-400 hover:bg-white/5">
+      <button
+      onClick={() => signOut({callbackUrl: "/login"})}
+      className="group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-orange-400 hover:bg-white/5">
         <LogOut size={18} />
         LOGOUT
       </button>
