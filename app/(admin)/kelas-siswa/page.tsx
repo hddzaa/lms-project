@@ -1,53 +1,67 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
-  Search,
-  Filter,
-  Download,
-  Plus,
-  Users,
-  Pencil,
-  Trash2,
-  ChevronLeft,
-  ChevronRight,
+  Search, Filter, Download, Plus, Users, Pencil, Trash2, ChevronLeft, ChevronRight, Loader2,
 } from "lucide-react";
-import { kelasList as initialKelasList, initials, deleteKelas, type Kelas } from "@/lib/dummy-data";
+import { initials } from "@/lib/dummy-data";
 import ConfirmDeleteModal from "@/components/ui/ConfirmDeleteModal";
 import Toast from "@/components/ui/Toast";
 
-const gradeStyle: Record<Kelas["grade"], string> = {
+type Kelas = {
+  id: string;
+  grade: "X" | "XI" | "XII";
+  name: string;
+  category: string;
+  waliKelas: string;
+  jumlahSiswa: number;
+  kapasitas: number;
+  tahunAjaran: string;
+};
+
+const gradeStyle: Record<string, string> = {
   X: "bg-primary-soft text-primary",
   XI: "bg-secondary-soft text-secondary",
   XII: "bg-white/10 text-gray-300",
 };
 
 export default function KelasSiswaPage() {
-  const [kelas, setKelas] = useState(initialKelasList);
+  const [kelas, setKelas] = useState<Kelas[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<Kelas | null>(null);
   const [toastOpen, setToastOpen] = useState(false);
+
+  async function fetchKelas() {
+    setLoading(true);
+    const res = await fetch("/api/kelas");
+    const data = await res.json();
+    setKelas(data);
+    setLoading(false);
+  }
+
+  useEffect(() => {
+    fetchKelas();
+  }, []);
 
   const filtered = kelas.filter((k) =>
     `${k.grade} ${k.name}`.toLowerCase().includes(search.toLowerCase())
   );
 
-  function handleConfirmDelete() {
-  if (!deleteTarget) return;
-  deleteKelas(deleteTarget.id);
-  setKelas((prev) => prev.filter((k) => k.id !== deleteTarget.id));
-  setDeleteTarget(null);
-  setToastOpen(true);
-}
+  async function handleConfirmDelete() {
+    if (!deleteTarget) return;
+    await fetch(`/api/kelas/${deleteTarget.id}`, { method: "DELETE" });
+    setKelas((prev) => prev.filter((k) => k.id !== deleteTarget.id));
+    setDeleteTarget(null);
+    setToastOpen(true);
+  }
 
   return (
     <div>
       <div className="flex items-start justify-between">
         <div className="animate-fade-in-up">
-          <h1 className="text-2xl font-semibold text-white">
-            Manajemen Kelas & Siswa
-          </h1>
+          <h1 className="text-2xl font-semibold text-white">Manajemen Kelas & Siswa</h1>
           <p className="mt-1 max-w-2xl text-muted">
             Kelola seluruh entitas ruang lingkup akademik, struktur kelas, dan
             pendelegasian wali kelas untuk tahun ajaran aktif.
@@ -62,16 +76,9 @@ export default function KelasSiswaPage() {
         </Link>
       </div>
 
-      {/* Toolbar */}
-      <div
-        className="animate-fade-in-up mt-6 flex flex-wrap items-center justify-between gap-3"
-        style={{ animationDelay: "120ms" }}
-      >
+      <div className="animate-fade-in-up mt-6 flex flex-wrap items-center justify-between gap-3" style={{ animationDelay: "120ms" }}>
         <div className="relative w-full max-w-xs">
-          <Search
-            size={16}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-muted"
-          />
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -90,112 +97,86 @@ export default function KelasSiswaPage() {
         </div>
       </div>
 
-      {/* Table */}
-      <div
-        className="animate-fade-in-up mt-5 overflow-hidden rounded-2xl border border-border bg-surface"
-        style={{ animationDelay: "160ms" }}
-      >
-        <table className="w-full text-left text-sm">
-          <thead>
-            <tr className="border-b border-border text-xs uppercase tracking-wide text-muted">
-              <th className="px-6 py-4 font-medium">No</th>
-              <th className="px-6 py-4 font-medium">Nama Kelas</th>
-              <th className="px-6 py-4 font-medium">Wali Kelas</th>
-              <th className="px-6 py-4 font-medium">Jumlah Siswa</th>
-              <th className="px-6 py-4 font-medium">Tahun Ajaran</th>
-              <th className="px-6 py-4 text-right font-medium">Aksi</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map((k, i) => (
-              <tr
-                key={k.id}
-                className="border-b border-border/60 transition-colors last:border-0 hover:bg-white/[0.02]"
-              >
-                <td className="px-6 py-4 text-muted">
-                  {String(i + 1).padStart(2, "0")}
-                </td>
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-3">
-                    <span
-                      className={`flex h-9 w-9 items-center justify-center rounded-lg text-sm font-semibold ${gradeStyle[k.grade]}`}
-                    >
-                      {k.grade}
-                    </span>
-                    <div>
-                      <p className="font-medium text-white">{k.name}</p>
-                      <p className="text-xs text-muted">{k.category}</p>
+      <div className="animate-fade-in-up mt-5 overflow-hidden rounded-2xl border border-border bg-surface" style={{ animationDelay: "160ms" }}>
+        {loading ? (
+          <div className="flex items-center justify-center gap-2 py-16 text-muted">
+            <Loader2 size={18} className="animate-spin" /> Memuat data kelas...
+          </div>
+        ) : (
+          <table className="w-full text-left text-sm">
+            <thead>
+              <tr className="border-b border-border text-xs uppercase tracking-wide text-muted">
+                <th className="px-6 py-4 font-medium">No</th>
+                <th className="px-6 py-4 font-medium">Nama Kelas</th>
+                <th className="px-6 py-4 font-medium">Wali Kelas</th>
+                <th className="px-6 py-4 font-medium">Jumlah Siswa</th>
+                <th className="px-6 py-4 font-medium">Tahun Ajaran</th>
+                <th className="px-6 py-4 text-right font-medium">Aksi</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((k, i) => (
+                <tr key={k.id} className="border-b border-border/60 transition-colors last:border-0 hover:bg-white/[0.02]">
+                  <td className="px-6 py-4 text-muted">{String(i + 1).padStart(2, "0")}</td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-3">
+                      <span className={`flex h-9 w-9 items-center justify-center rounded-lg text-sm font-semibold ${gradeStyle[k.grade]}`}>
+                        {k.grade}
+                      </span>
+                      <div>
+                        <p className="font-medium text-white">{k.name}</p>
+                        <p className="text-xs text-muted">{k.category}</p>
+                      </div>
                     </div>
-                  </div>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-2.5">
-                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-primary to-secondary text-xs font-semibold text-bg">
-                      {initials(k.waliKelas)}
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-2.5">
+                      <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-primary to-secondary text-xs font-semibold text-bg">
+                        {initials(k.waliKelas)}
+                      </span>
+                      <span className="text-gray-300">{k.waliKelas}</span>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className="rounded-full bg-primary-soft px-3 py-1 text-xs font-medium text-primary">
+                      {k.jumlahSiswa} Siswa
                     </span>
-                    <span className="text-gray-300">{k.waliKelas}</span>
-                  </div>
-                </td>
-                <td className="px-6 py-4">
-                  <span className="rounded-full bg-primary-soft px-3 py-1 text-xs font-medium text-primary">
-                    {k.jumlahSiswa} Siswa
-                  </span>
-                </td>
-                <td className="px-6 py-4 text-gray-300">{k.tahunAjaran}</td>
-                <td className="px-6 py-4">
-                  <div className="flex items-center justify-end gap-3">
-                    <Link
-                      href={`/kelas-siswa/${k.id}/siswa`}
-                      title="Kelola Siswa"
-                      className="text-primary transition-transform hover:scale-110"
-                    >
-                      <Users size={17} />
-                    </Link>
-                    <Link
-                      href={`/kelas-siswa/${k.id}/edit`}
-                      title="Edit Kelas"
-                      className="text-gray-400 transition-transform hover:scale-110 hover:text-gray-200"
-                    >
-                      <Pencil size={16} />
-                    </Link>
-                    <button
-                      title="Hapus Kelas"
-                      onClick={() => setDeleteTarget(k)}
-                      className="text-red-400 transition-transform hover:scale-110 hover:text-red-300"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-            {filtered.length === 0 && (
-              <tr>
-                <td colSpan={6} className="px-6 py-10 text-center text-muted">
-                  Tidak ada kelas ditemukan.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+                  </td>
+                  <td className="px-6 py-4 text-gray-300">{k.tahunAjaran}</td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center justify-end gap-3">
+                      <Link href={`/kelas-siswa/${k.id}/siswa`} title="Kelola Siswa" className="text-primary transition-transform hover:scale-110">
+                        <Users size={17} />
+                      </Link>
+                      <Link href={`/kelas-siswa/${k.id}/edit`} title="Edit Kelas" className="text-gray-400 transition-transform hover:scale-110 hover:text-gray-200">
+                        <Pencil size={16} />
+                      </Link>
+                      <button title="Hapus Kelas" onClick={() => setDeleteTarget(k)} className="text-red-400 transition-transform hover:scale-110 hover:text-red-300">
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {filtered.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="px-6 py-10 text-center text-muted">
+                    Belum ada kelas. Klik "Tambah Kelas" untuk menambahkan.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        )}
       </div>
 
-      {/* Pagination */}
       <div className="mt-5 flex items-center justify-between text-sm text-muted">
-        <p>Menampilkan 1-{filtered.length} dari {kelas.length} total kelas</p>
+        <p>Menampilkan {filtered.length} dari {kelas.length} total kelas</p>
         <div className="flex items-center gap-1.5">
           <button className="flex h-8 w-8 items-center justify-center rounded-lg border border-border text-gray-400 hover:bg-white/5">
             <ChevronLeft size={15} />
           </button>
-          <button className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-sm font-semibold text-bg">
-            1
-          </button>
-          <button className="flex h-8 w-8 items-center justify-center rounded-lg border border-border text-gray-400 hover:bg-white/5">
-            2
-          </button>
-          <button className="flex h-8 w-8 items-center justify-center rounded-lg border border-border text-gray-400 hover:bg-white/5">
-            3
-          </button>
+          <button className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-sm font-semibold text-bg">1</button>
           <button className="flex h-8 w-8 items-center justify-center rounded-lg border border-border text-gray-400 hover:bg-white/5">
             <ChevronRight size={15} />
           </button>
@@ -209,11 +190,7 @@ export default function KelasSiswaPage() {
         itemLabel={deleteTarget ? `kelas ${deleteTarget.grade} ${deleteTarget.name}` : "data ini"}
       />
 
-      <Toast
-        open={toastOpen}
-        onClose={() => setToastOpen(false)}
-        message="Kelas berhasil dihapus"
-      />
+      <Toast open={toastOpen} onClose={() => setToastOpen(false)} message="Kelas berhasil dihapus" />
     </div>
   );
 }

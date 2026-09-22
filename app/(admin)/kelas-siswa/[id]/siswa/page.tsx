@@ -1,71 +1,84 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { Search, Filter, Plus, Pencil, Trash2, ChevronLeft } from "lucide-react";
-import { getKelasById, siswaByKelas, initials, deleteSiswa, type Siswa } from "@/lib/dummy-data";
+import { Search, Filter, Plus, Pencil, Trash2, ChevronLeft, Loader2 } from "lucide-react";
+import { initials } from "@/lib/dummy-data";
 import ConfirmDeleteModal from "@/components/ui/ConfirmDeleteModal";
 import Toast from "@/components/ui/Toast";
 
-const genderStyle: Record<Siswa["gender"], string> = {
+type Siswa = { id: string; nama: string; nis: string; email: string; gender: "Laki-laki" | "Perempuan" };
+type KelasInfo = { id: string; grade: string; name: string; waliKelas: string; kapasitas: number };
+
+const genderStyle: Record<string, string> = {
   "Laki-laki": "bg-primary-soft text-primary",
   Perempuan: "bg-secondary-soft text-secondary",
 };
 
 export default function KelolaSiswaPage() {
   const params = useParams<{ id: string }>();
-  const kelas = getKelasById(params.id);
-  const [siswaList, setSiswaList] = useState<Siswa[]>(siswaByKelas[params.id] ?? []);
+  const [kelas, setKelas] = useState<KelasInfo | null>(null);
+  const [siswaList, setSiswaList] = useState<Siswa[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<Siswa | null>(null);
   const [toastOpen, setToastOpen] = useState(false);
 
-  if (!kelas) {
-    return (
-      <div className="text-muted">
-        Kelas tidak ditemukan.{" "}
-        <Link href="/kelas-siswa" className="text-primary hover:underline">
-          Kembali ke daftar kelas
-        </Link>
-      </div>
-    );
+  async function fetchData() {
+    setLoading(true);
+    const [kelasRes, siswaRes] = await Promise.all([
+      fetch(`/api/kelas/${params.id}`),
+      fetch(`/api/kelas/${params.id}/siswa`),
+    ]);
+    if (kelasRes.ok) setKelas(await kelasRes.json());
+    if (siswaRes.ok) setSiswaList(await siswaRes.json());
+    setLoading(false);
   }
 
-  const filtered = siswaList.filter((s) =>
-    s.nama.toLowerCase().includes(search.toLowerCase())
-  );
+  useEffect(() => {
+    fetchData();
+  }, [params.id]);
 
-  function handleConfirmDelete() {
+  const filtered = siswaList.filter((s) => s.nama.toLowerCase().includes(search.toLowerCase()));
+
+  async function handleConfirmDelete() {
     if (!deleteTarget) return;
-    deleteSiswa(kelas!.id, deleteTarget.id);
+    await fetch(`/api/kelas/${params.id}/siswa/${deleteTarget.id}`, { method: "DELETE" });
     setSiswaList((prev) => prev.filter((s) => s.id !== deleteTarget.id));
     setDeleteTarget(null);
     setToastOpen(true);
   }
 
+  if (loading) {
+    return (
+      <div className="flex items-center gap-2 text-muted">
+        <Loader2 size={18} className="animate-spin" /> Memuat data siswa...
+      </div>
+    );
+  }
+
+  if (!kelas) {
+    return (
+      <div className="text-muted">
+        Kelas tidak ditemukan.{" "}
+        <Link href="/kelas-siswa" className="text-primary hover:underline">Kembali ke daftar kelas</Link>
+      </div>
+    );
+  }
+
   return (
     <div>
       <h1 className="animate-fade-in-up text-3xl font-bold text-white">Kelola Siswa</h1>
-      <p
-        className="animate-fade-in-up mt-2 max-w-2xl text-muted"
-        style={{ animationDelay: "40ms" }}
-      >
-        Kelola seluruh siswa pada kelas yang dipilih secara efisien dengan
-        sistem manajemen terpusat Aetheris.
+      <p className="animate-fade-in-up mt-2 max-w-2xl text-muted" style={{ animationDelay: "40ms" }}>
+        Kelola seluruh siswa pada kelas yang dipilih secara efisien dengan sistem manajemen terpusat Aetheris.
       </p>
 
-      {/* Info kelas */}
-      <div
-        className="animate-fade-in-up mt-6 flex flex-wrap items-center justify-between gap-6 rounded-2xl border border-border bg-surface px-8 py-6"
-        style={{ animationDelay: "80ms" }}
-      >
+      <div className="animate-fade-in-up mt-6 flex flex-wrap items-center justify-between gap-6 rounded-2xl border border-border bg-surface px-8 py-6" style={{ animationDelay: "80ms" }}>
         <div className="flex flex-wrap gap-10">
           <div>
             <p className="text-xs tracking-wide text-muted">NAMA KELAS</p>
-            <p className="mt-1 font-semibold text-primary">
-              {kelas.grade} - {kelas.name}
-            </p>
+            <p className="mt-1 font-semibold text-primary">{kelas.grade} - {kelas.name}</p>
           </div>
           <div>
             <p className="text-xs tracking-wide text-muted">WALI KELAS</p>
@@ -79,19 +92,12 @@ export default function KelolaSiswaPage() {
             </p>
           </div>
         </div>
-        <Link
-          href={`/kelas-siswa/${kelas.id}/edit`}
-          className="flex items-center gap-2 rounded-full border border-border px-5 py-2.5 text-sm text-gray-300 transition-colors hover:bg-white/5"
-        >
+        <Link href={`/kelas-siswa/${kelas.id}/edit`} className="flex items-center gap-2 rounded-full border border-border px-5 py-2.5 text-sm text-gray-300 transition-colors hover:bg-white/5">
           <Pencil size={15} /> Edit Kelas
         </Link>
       </div>
 
-      {/* Toolbar */}
-      <div
-        className="animate-fade-in-up mt-6 flex flex-wrap items-center justify-between gap-3"
-        style={{ animationDelay: "120ms" }}
-      >
+      <div className="animate-fade-in-up mt-6 flex flex-wrap items-center justify-between gap-3" style={{ animationDelay: "120ms" }}>
         <div className="relative w-full max-w-xs">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
           <input
@@ -106,20 +112,13 @@ export default function KelolaSiswaPage() {
           <button className="flex items-center gap-2 rounded-xl border border-border bg-surface px-4 py-2.5 text-sm text-gray-300 transition-colors hover:bg-white/5">
             <Filter size={15} /> Filter
           </button>
-          <Link
-            href={`/kelas-siswa/${kelas.id}/siswa/tambah`}
-            className="flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-bg transition-transform hover:scale-105"
-          >
+          <Link href={`/kelas-siswa/${kelas.id}/siswa/tambah`} className="flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-bg transition-transform hover:scale-105">
             <Plus size={16} /> Tambah Siswa
           </Link>
         </div>
       </div>
 
-      {/* Table */}
-      <div
-        className="animate-fade-in-up mt-5 overflow-hidden rounded-2xl border border-border bg-surface"
-        style={{ animationDelay: "160ms" }}
-      >
+      <div className="animate-fade-in-up mt-5 overflow-hidden rounded-2xl border border-border bg-surface" style={{ animationDelay: "160ms" }}>
         <table className="w-full text-left text-sm">
           <thead>
             <tr className="border-b border-border text-xs uppercase tracking-wide text-muted">
@@ -133,10 +132,7 @@ export default function KelolaSiswaPage() {
           </thead>
           <tbody>
             {filtered.map((s, i) => (
-              <tr
-                key={s.id}
-                className="border-b border-border/60 transition-colors last:border-0 hover:bg-white/[0.02]"
-              >
+              <tr key={s.id} className="border-b border-border/60 transition-colors last:border-0 hover:bg-white/[0.02]">
                 <td className="px-6 py-4 text-muted">{String(i + 1).padStart(2, "0")}</td>
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-3">
@@ -155,18 +151,10 @@ export default function KelolaSiswaPage() {
                 </td>
                 <td className="px-6 py-4">
                   <div className="flex items-center justify-end gap-3">
-                    <Link
-                      href={`/kelas-siswa/${kelas.id}/siswa/${s.id}/edit`}
-                      title="Edit Siswa"
-                      className="text-gray-400 transition-transform hover:scale-110 hover:text-gray-200"
-                    >
+                    <Link href={`/kelas-siswa/${kelas.id}/siswa/${s.id}/edit`} title="Edit Siswa" className="text-gray-400 transition-transform hover:scale-110 hover:text-gray-200">
                       <Pencil size={16} />
                     </Link>
-                    <button
-                      title="Hapus Siswa"
-                      onClick={() => setDeleteTarget(s)}
-                      className="text-red-400 transition-transform hover:scale-110 hover:text-red-300"
-                    >
+                    <button title="Hapus Siswa" onClick={() => setDeleteTarget(s)} className="text-red-400 transition-transform hover:scale-110 hover:text-red-300">
                       <Trash2 size={16} />
                     </button>
                   </div>
@@ -175,9 +163,7 @@ export default function KelolaSiswaPage() {
             ))}
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-6 py-10 text-center text-muted">
-                  Belum ada siswa di kelas ini.
-                </td>
+                <td colSpan={6} className="px-6 py-10 text-center text-muted">Belum ada siswa di kelas ini.</td>
               </tr>
             )}
           </tbody>
@@ -186,10 +172,7 @@ export default function KelolaSiswaPage() {
 
       <div className="mt-5 flex items-center justify-between text-sm text-muted">
         <p>Menampilkan {filtered.length} dari {siswaList.length} siswa</p>
-        <Link
-          href="/kelas-siswa"
-          className="flex items-center gap-2 rounded-full border border-border px-5 py-2.5 text-gray-300 transition-colors hover:bg-white/5"
-        >
+        <Link href="/kelas-siswa" className="flex items-center gap-2 rounded-full border border-border px-5 py-2.5 text-gray-300 transition-colors hover:bg-white/5">
           <ChevronLeft size={15} /> Kembali
         </Link>
       </div>

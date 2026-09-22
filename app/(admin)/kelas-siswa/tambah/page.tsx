@@ -4,14 +4,10 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ChevronDown, AlertCircle } from "lucide-react";
-import { waliKelasOptions, addKelas } from "@/lib/dummy-data";
+import { waliKelasOptions } from "@/lib/dummy-data";
 import SuccessModal from "@/components/ui/SuccessModal";
 
-type FormErrors = {
-  nama?: string;
-  wali?: string;
-  tahunAjaran?: string;
-};
+type FormErrors = { nama?: string; wali?: string; tahunAjaran?: string };
 
 export default function TambahKelasPage() {
   const router = useRouter();
@@ -20,6 +16,7 @@ export default function TambahKelasPage() {
   const [tahunAjaran, setTahunAjaran] = useState("2023/2024");
   const [errors, setErrors] = useState<FormErrors>({});
   const [showSuccess, setShowSuccess] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   function validate(): FormErrors {
     const newErrors: FormErrors = {};
@@ -29,9 +26,8 @@ export default function TambahKelasPage() {
     return newErrors;
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-
     const newErrors = validate();
     setErrors(newErrors);
     if (Object.keys(newErrors).length > 0) return;
@@ -40,15 +36,20 @@ export default function TambahKelasPage() {
     const grade = parts[0].toUpperCase();
     const rest = parts.slice(1).join(" ") || nama;
 
-    addKelas({
-      grade: (["X", "XI", "XII"].includes(grade) ? grade : "X") as "X" | "XI" | "XII",
-      name: rest,
-      category: "Umum",
-      waliKelas: wali,
-      kapasitas: 36,
-      tahunAjaran,
+    setSubmitting(true);
+    await fetch("/api/kelas", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        grade: ["X", "XI", "XII"].includes(grade) ? grade : "X",
+        name: rest,
+        category: "Umum",
+        waliKelas: wali,
+        kapasitas: 36,
+        tahunAjaran,
+      }),
     });
-
+    setSubmitting(false);
     setShowSuccess(true);
   }
 
@@ -58,16 +59,10 @@ export default function TambahKelasPage() {
         KELAS BARU
         <span className="h-1.5 w-1.5 rounded-full bg-primary" />
       </span>
-      <h1
-        className="animate-fade-in-up text-3xl font-bold text-white"
-        style={{ animationDelay: "40ms" }}
-      >
+      <h1 className="animate-fade-in-up text-3xl font-bold text-white" style={{ animationDelay: "40ms" }}>
         Tambah Kelas
       </h1>
-      <p
-        className="animate-fade-in-up mt-2 text-muted"
-        style={{ animationDelay: "80ms" }}
-      >
+      <p className="animate-fade-in-up mt-2 text-muted" style={{ animationDelay: "80ms" }}>
         Tambahkan kelas baru ke dalam sistem manajemen akademik.
       </p>
 
@@ -77,109 +72,56 @@ export default function TambahKelasPage() {
         className="animate-fade-in-up mt-6 max-w-2xl rounded-2xl border border-border bg-surface p-8"
         style={{ animationDelay: "120ms" }}
       >
-        <label className="mb-2 block text-xs font-medium tracking-wide text-muted">
-          NAMA KELAS
-        </label>
+        <label className="mb-2 block text-xs font-medium tracking-wide text-muted">NAMA KELAS</label>
         <input
           value={nama}
-          onChange={(e) => {
-            setNama(e.target.value);
-            if (errors.nama) setErrors((prev) => ({ ...prev, nama: undefined }));
-          }}
+          onChange={(e) => { setNama(e.target.value); if (errors.nama) setErrors((p) => ({ ...p, nama: undefined })); }}
           type="text"
           placeholder="Contoh: XII IPA 1"
-          className={`w-full rounded-xl border bg-black/30 px-4 py-3 text-sm text-gray-200 placeholder-gray-500 outline-none ${
-            errors.nama
-              ? "border-red-500/60 focus:border-red-500"
-              : "border-border focus:border-primary/50"
-          }`}
+          className={`mb-1.5 w-full rounded-xl border bg-black/30 px-4 py-3 text-sm text-gray-200 placeholder-gray-500 outline-none ${errors.nama ? "border-red-500/60" : "border-border focus:border-primary/50"}`}
         />
-        {errors.nama && (
-          <p className="mt-1.5 flex items-center gap-1.5 text-xs text-red-400">
-            <AlertCircle size={13} /> {errors.nama}
-          </p>
-        )}
+        {errors.nama && <p className="mb-4 flex items-center gap-1.5 text-xs text-red-400"><AlertCircle size={13} /> {errors.nama}</p>}
+        {!errors.nama && <div className="mb-6" />}
 
-        <label className="mb-2 mt-6 block text-xs font-medium tracking-wide text-muted">
-          WALI KELAS
-        </label>
+        <label className="mb-2 block text-xs font-medium tracking-wide text-muted">WALI KELAS</label>
         <div className="relative">
           <select
             value={wali}
-            onChange={(e) => {
-              setWali(e.target.value);
-              if (errors.wali) setErrors((prev) => ({ ...prev, wali: undefined }));
-            }}
-            className={`w-full appearance-none rounded-xl border bg-black/30 px-4 py-3 text-sm text-gray-200 outline-none ${
-              errors.wali
-                ? "border-red-500/60 focus:border-red-500"
-                : "border-border focus:border-primary/50"
-            }`}
+            onChange={(e) => { setWali(e.target.value); if (errors.wali) setErrors((p) => ({ ...p, wali: undefined })); }}
+            className={`w-full appearance-none rounded-xl border bg-black/30 px-4 py-3 text-sm text-gray-200 outline-none ${errors.wali ? "border-red-500/60" : "border-border focus:border-primary/50"}`}
           >
-            <option value="" disabled>
-              Pilih Guru Pengampu
-            </option>
-            {waliKelasOptions.map((g) => (
-              <option key={g} value={g}>
-                {g}
-              </option>
-            ))}
+            <option value="" disabled>Pilih Guru Pengampu</option>
+            {waliKelasOptions.map((g) => (<option key={g} value={g}>{g}</option>))}
           </select>
-          <ChevronDown
-            size={16}
-            className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-muted"
-          />
+          <ChevronDown size={16} className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-muted" />
         </div>
-        {errors.wali && (
-          <p className="mt-1.5 flex items-center gap-1.5 text-xs text-red-400">
-            <AlertCircle size={13} /> {errors.wali}
-          </p>
-        )}
+        {errors.wali && <p className="mt-1.5 flex items-center gap-1.5 text-xs text-red-400"><AlertCircle size={13} /> {errors.wali}</p>}
 
-        <label className="mb-2 mt-6 block text-xs font-medium tracking-wide text-muted">
-          TAHUN AJARAN
-        </label>
+        <label className="mb-2 mt-6 block text-xs font-medium tracking-wide text-muted">TAHUN AJARAN</label>
         <input
           value={tahunAjaran}
-          onChange={(e) => {
-            setTahunAjaran(e.target.value);
-            if (errors.tahunAjaran) setErrors((prev) => ({ ...prev, tahunAjaran: undefined }));
-          }}
+          onChange={(e) => { setTahunAjaran(e.target.value); if (errors.tahunAjaran) setErrors((p) => ({ ...p, tahunAjaran: undefined })); }}
           type="text"
           placeholder="2023/2024"
-          className={`w-full rounded-xl border bg-black/30 px-4 py-3 text-sm text-gray-200 placeholder-gray-500 outline-none ${
-            errors.tahunAjaran
-              ? "border-red-500/60 focus:border-red-500"
-              : "border-border focus:border-primary/50"
-          }`}
+          className={`w-full rounded-xl border bg-black/30 px-4 py-3 text-sm text-gray-200 placeholder-gray-500 outline-none ${errors.tahunAjaran ? "border-red-500/60" : "border-border focus:border-primary/50"}`}
         />
-        {errors.tahunAjaran && (
-          <p className="mt-1.5 flex items-center gap-1.5 text-xs text-red-400">
-            <AlertCircle size={13} /> {errors.tahunAjaran}
-          </p>
-        )}
+        {errors.tahunAjaran && <p className="mt-1.5 flex items-center gap-1.5 text-xs text-red-400"><AlertCircle size={13} /> {errors.tahunAjaran}</p>}
 
         <div className="mt-8 flex justify-end gap-3 border-t border-border pt-6">
-          <Link
-            href="/kelas-siswa"
-            className="rounded-full border border-border px-6 py-2.5 text-sm font-medium text-gray-300 transition-colors hover:bg-white/5"
-          >
+          <Link href="/kelas-siswa" className="rounded-full border border-border px-6 py-2.5 text-sm font-medium text-gray-300 transition-colors hover:bg-white/5">
             BATAL
           </Link>
           <button
             type="submit"
-            className="rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-bg transition-transform hover:scale-105"
+            disabled={submitting}
+            className="rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-bg transition-transform hover:scale-105 disabled:opacity-60"
           >
-            SIMPAN →
+            {submitting ? "Menyimpan..." : "SIMPAN →"}
           </button>
         </div>
       </form>
 
-      <SuccessModal
-        open={showSuccess}
-        onClose={() => router.push("/kelas-siswa")}
-        message="Kelas berhasil ditambahkan"
-      />
+      <SuccessModal open={showSuccess} onClose={() => router.push("/kelas-siswa")} message="Kelas berhasil ditambahkan" />
     </div>
   );
 }
