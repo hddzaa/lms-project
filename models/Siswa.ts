@@ -13,10 +13,9 @@ const SiswaSchema = new Schema(
   { timestamps: true }
 );
 
-SiswaSchema.pre("save", async function (next: any) {
-  if (!this.isModified("password")) return next();
+SiswaSchema.pre("save", async function (this: any) {
+  if (!this.isModified("password")) return;
   this.password = await bcrypt.hash(this.password, 10);
-  next();
 });
 
 const Siswa = models.Siswa || model("Siswa", SiswaSchema);

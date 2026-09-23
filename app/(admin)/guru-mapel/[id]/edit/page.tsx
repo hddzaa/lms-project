@@ -1,10 +1,9 @@
-    "use client";
+"use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
-import { ChevronDown, AlertCircle, User, IdCard, Mail, BookOpen, Lock, Eye, EyeOff } from "lucide-react";
-import { getGuruById, updateGuru, getMapelNames } from "@/lib/dummy-data";
+import { ChevronDown, AlertCircle, User, IdCard, Mail, BookOpen, Lock, Eye, EyeOff, Loader2 } from "lucide-react";
 import Toast from "@/components/ui/Toast";
 
 type FormErrors = { nama?: string; nip?: string; email?: string; mapel?: string; password?: string };
@@ -12,27 +11,43 @@ type FormErrors = { nama?: string; nip?: string; email?: string; mapel?: string;
 export default function EditGuruPage() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
-  const existingGuru = getGuruById(params.id);
 
-  const [nama, setNama] = useState(existingGuru?.nama ?? "");
-  const [nip, setNip] = useState(existingGuru?.nip ?? "");
-  const [email, setEmail] = useState(existingGuru?.email ?? "");
-  const [mapel, setMapel] = useState(existingGuru?.mapel ?? "");
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
+  const [mapelOptions, setMapelOptions] = useState<string[]>([]);
+  const [nama, setNama] = useState("");
+  const [nip, setNip] = useState("");
+  const [email, setEmail] = useState("");
+  const [mapel, setMapel] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
   const [showToast, setShowToast] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  const mapelOptions = getMapelNames();
+  useEffect(() => {
+    async function load() {
+      const [guruRes, mapelRes] = await Promise.all([
+        fetch(`/api/guru/${params.id}`),
+        fetch("/api/mapel"),
+      ]);
+      const mapelData = await mapelRes.json();
+      setMapelOptions(mapelData.map((m: any) => m.nama));
 
-  if (!existingGuru) {
-    return (
-      <div className="text-muted">
-        Data guru tidak ditemukan.{" "}
-        <Link href="/guru-mapel" className="text-primary hover:underline">Kembali ke daftar guru</Link>
-      </div>
-    );
-  }
+      if (!guruRes.ok) {
+        setNotFound(true);
+        setLoading(false);
+        return;
+      }
+      const data = await guruRes.json();
+      setNama(data.nama);
+      setNip(data.nip);
+      setEmail(data.email);
+      setMapel(data.mapel);
+      setLoading(false);
+    }
+    load();
+  }, [params.id]);
 
   function validate(): FormErrors {
     const e: FormErrors = {};
@@ -44,20 +59,37 @@ export default function EditGuruPage() {
     return e;
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const newErrors = validate();
     setErrors(newErrors);
     if (Object.keys(newErrors).length > 0) return;
 
-    updateGuru(existingGuru!.id, {
-      nama,
-      nip,
-      email,
-      mapel,
-      ...(password ? { password } : {}),
+    setSubmitting(true);
+    await fetch(`/api/guru/${params.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nama, nip, email, mapel, ...(password ? { password } : {}) }),
     });
+    setSubmitting(false);
     setShowToast(true);
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center gap-2 text-muted">
+        <Loader2 size={18} className="animate-spin" /> Memuat data guru...
+      </div>
+    );
+  }
+
+  if (notFound) {
+    return (
+      <div className="text-muted">
+        Data guru tidak ditemukan.{" "}
+        <Link href="/guru-mapel" className="text-primary hover:underline">Kembali ke daftar guru</Link>
+      </div>
+    );
   }
 
   return (
@@ -164,8 +196,12 @@ export default function EditGuruPage() {
           <Link href="/guru-mapel" className="rounded-full border border-border px-6 py-2.5 text-sm font-medium text-gray-300 transition-colors hover:bg-white/5">
             BATAL
           </Link>
-          <button type="submit" className="rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-bg transition-transform hover:scale-105">
-            SIMPAN →
+          <button
+            type="submit"
+            disabled={submitting}
+            className="rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-bg transition-transform hover:scale-105 disabled:opacity-60"
+          >
+            {submitting ? "Menyimpan..." : "SIMPAN →"}
           </button>
         </div>
       </form>

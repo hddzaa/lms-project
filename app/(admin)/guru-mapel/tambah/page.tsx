@@ -1,23 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ChevronDown, AlertCircle, User, IdCard, Mail, BookOpen, Lock, Eye, EyeOff } from "lucide-react";
-import { addGuru, getMapelNames } from "@/lib/dummy-data";
 import SuccessModal from "@/components/ui/SuccessModal";
 
-type FormErrors = {
-  nama?: string;
-  nip?: string;
-  email?: string;
-  mapel?: string;
-  password?: string;
-  confirmPassword?: string;
-};
+type FormErrors = { nama?: string; nip?: string; email?: string; mapel?: string; password?: string; confirmPassword?: string };
 
 export default function TambahGuruPage() {
   const router = useRouter();
+  const [mapelOptions, setMapelOptions] = useState<string[]>([]);
   const [nama, setNama] = useState("");
   const [nip, setNip] = useState("");
   const [email, setEmail] = useState("");
@@ -27,8 +20,16 @@ export default function TambahGuruPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
   const [showSuccess, setShowSuccess] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  const mapelOptions = getMapelNames();
+  useEffect(() => {
+    async function loadMapel() {
+      const res = await fetch("/api/mapel");
+      const data = await res.json();
+      setMapelOptions(data.map((m: any) => m.nama));
+    }
+    loadMapel();
+  }, []);
 
   function validate(): FormErrors {
     const e: FormErrors = {};
@@ -42,12 +43,19 @@ export default function TambahGuruPage() {
     return e;
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const newErrors = validate();
     setErrors(newErrors);
     if (Object.keys(newErrors).length > 0) return;
-    addGuru({ nama, nip, email, mapel, password });
+
+    setSubmitting(true);
+    await fetch("/api/guru", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nama, nip, email, mapel, password }),
+    });
+    setSubmitting(false);
     setShowSuccess(true);
   }
 
@@ -131,6 +139,7 @@ export default function TambahGuruPage() {
               className={`w-full appearance-none rounded-xl border bg-black/30 py-3 pl-11 pr-9 text-sm text-gray-200 outline-none ${errors.mapel ? "border-red-500/60" : "border-border focus:border-primary/50"}`}
             >
               <option value="" disabled>Pilih mata pelajaran pengampu...</option>
+              {mapelOptions.length === 0 && <option value="" disabled>Belum ada mata pelajaran, tambahkan dulu di tab Mata Pelajaran</option>}
               {mapelOptions.map((m) => (<option key={m} value={m}>{m}</option>))}
             </select>
             <ChevronDown size={15} className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-muted" />
@@ -177,8 +186,12 @@ export default function TambahGuruPage() {
           <Link href="/guru-mapel" className="rounded-full border border-border px-6 py-2.5 text-sm font-medium text-gray-300 transition-colors hover:bg-white/5">
             BATAL
           </Link>
-          <button type="submit" className="rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-bg transition-transform hover:scale-105">
-            SIMPAN →
+          <button
+            type="submit"
+            disabled={submitting}
+            className="rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-bg transition-transform hover:scale-105 disabled:opacity-60"
+          >
+            {submitting ? "Menyimpan..." : "SIMPAN →"}
           </button>
         </div>
       </form>
