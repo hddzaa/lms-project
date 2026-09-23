@@ -1,80 +1,116 @@
 "use client";
 
-import { useState } from "react";
-import { ChevronDown, Calendar, Search, Download, ListFilter } from "lucide-react";
-import {
-  aktivitasGuruList,
-  aktivitasSiswaLogList,
-  getJenisBadge,
-  getJenisDot,
-  getJenisBadgeSiswa,
-  getUniqueGuruNamesFromAktivitas,
-  getUniqueSiswaNamesFromAktivitas,
-  type JenisAktivitas,
-  type JenisAktivitasSiswa,
-} from "@/lib/dummy-data";
+import { useEffect, useState } from "react";
+import { ChevronDown, Calendar, Search, Download, ListFilter, Loader2 } from "lucide-react";
 import { exportToExcel, exportToCSV } from "@/lib/export";
 import DownloadRekapModal from "@/components/rekap-aktivitas(admin)/DownloadRekapModal";
 import Toast from "@/components/ui/Toast";
 
-const jenisGuruOptions: (JenisAktivitas | "Semua Aktivitas")[] = [
-  "Semua Aktivitas", "Upload Materi", "Membuat Assessment", "Menilai Tugas", "Mengedit Assessment",
-];
-const jenisSiswaOptions: (JenisAktivitasSiswa | "Semua Aktivitas")[] = [
-  "Semua Aktivitas", "Mengerjakan Assessment", "Melihat Materi", "Mengumpulkan Tugas", "Melihat Nilai",
-];
+type AktivitasGuru = { id: string; idGuru: string; namaGuru: string; jenis: string; keterangan: string; createdAt: string };
+type AktivitasSiswa = { id: string; idSiswa: string; namaSiswa: string; kelas: string; jenis: string; keterangan: string; createdAt: string };
+
+const jenisGuruOptions = ["Semua Aktivitas", "Upload Materi", "Membuat Assessment", "Menilai Tugas", "Mengedit Assessment"];
+const jenisSiswaOptions = ["Semua Aktivitas", "Mengerjakan Assessment", "Melihat Materi", "Mengumpulkan Tugas", "Melihat Nilai"];
+
+function formatTanggalWaktu(iso: string) {
+  const d = new Date(iso);
+  const tanggal = d.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric", timeZone: "Asia/Jakarta" });
+  const waktu = d.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Jakarta" });
+  return { tanggal, waktu };
+}
+
+function toISODate(iso: string) {
+  return new Date(iso).toISOString().slice(0, 10);
+}
 
 export default function RekapAktivitasPage() {
   const [tab, setTab] = useState<"guru" | "siswa">("guru");
+  const [loading, setLoading] = useState(true);
+
+  const [aktivitasGuru, setAktivitasGuru] = useState<AktivitasGuru[]>([]);
+  const [aktivitasSiswa, setAktivitasSiswa] = useState<AktivitasSiswa[]>([]);
+  const [guruNames, setGuruNames] = useState<string[]>([]);
+  const [siswaNames, setSiswaNames] = useState<string[]>([]);
 
   const [periodeMulai, setPeriodeMulai] = useState("");
   const [periodeSelesai, setPeriodeSelesai] = useState("");
   const [pilihOrang, setPilihOrang] = useState("Semua");
   const [jenisFilter, setJenisFilter] = useState("Semua Aktivitas");
-
   const [appliedFilter, setAppliedFilter] = useState({ periodeMulai: "", periodeSelesai: "", pilihOrang: "Semua", jenisFilter: "Semua Aktivitas" });
 
   const [showDownloadModal, setShowDownloadModal] = useState(false);
   const [toastOpen, setToastOpen] = useState(false);
 
-  const guruNames = getUniqueGuruNamesFromAktivitas();
-  const siswaNames = getUniqueSiswaNamesFromAktivitas();
+  useEffect(() => {
+    async function loadAll() {
+      setLoading(true);
+      const [agRes, asRes, guruRes, siswaRes] = await Promise.all([
+        fetch("/api/aktivitas-guru"),
+        fetch("/api/aktivitas-siswa"),
+        fetch("/api/guru"),
+        fetch("/api/siswa"),
+      ]);
+      setAktivitasGuru(await agRes.json());
+      setAktivitasSiswa(await asRes.json());
+      const guruData = await guruRes.json();
+      const siswaData = await siswaRes.json();
+      setGuruNames(guruData.map((g: any) => g.nama));
+      setSiswaNames(siswaData.map((s: any) => s.nama));
+      setLoading(false);
+    }
+    loadAll();
+  }, []);
 
   function handleTampilkanRekap() {
     setAppliedFilter({ periodeMulai, periodeSelesai, pilihOrang, jenisFilter });
   }
 
-  const filteredGuru = aktivitasGuruList.filter((a) => {
-    const matchMulai = !appliedFilter.periodeMulai || a.tanggalISO >= appliedFilter.periodeMulai;
-    const matchSelesai = !appliedFilter.periodeSelesai || a.tanggalISO <= appliedFilter.periodeSelesai;
+  function handleSwitchTab(newTab: "guru" | "siswa") {
+    setTab(newTab);
+    setPilihOrang("Semua");
+    setJenisFilter("Semua Aktivitas");
+    setPeriodeMulai("");
+    setPeriodeSelesai("");
+    setAppliedFilter({ periodeMulai: "", periodeSelesai: "", pilihOrang: "Semua", jenisFilter: "Semua Aktivitas" });
+  }
+
+  const filteredGuru = aktivitasGuru.filter((a) => {
+    const tgl = toISODate(a.createdAt);
+    const matchMulai = !appliedFilter.periodeMulai || tgl >= appliedFilter.periodeMulai;
+    const matchSelesai = !appliedFilter.periodeSelesai || tgl <= appliedFilter.periodeSelesai;
     const matchOrang = appliedFilter.pilihOrang === "Semua" || a.namaGuru === appliedFilter.pilihOrang;
     const matchJenis = appliedFilter.jenisFilter === "Semua Aktivitas" || a.jenis === appliedFilter.jenisFilter;
     return matchMulai && matchSelesai && matchOrang && matchJenis;
   });
 
-  const filteredSiswa = aktivitasSiswaLogList.filter((a) => {
-    const matchMulai = !appliedFilter.periodeMulai || a.tanggalISO >= appliedFilter.periodeMulai;
-    const matchSelesai = !appliedFilter.periodeSelesai || a.tanggalISO <= appliedFilter.periodeSelesai;
+  const filteredSiswa = aktivitasSiswa.filter((a) => {
+    const tgl = toISODate(a.createdAt);
+    const matchMulai = !appliedFilter.periodeMulai || tgl >= appliedFilter.periodeMulai;
+    const matchSelesai = !appliedFilter.periodeSelesai || tgl <= appliedFilter.periodeSelesai;
     const matchOrang = appliedFilter.pilihOrang === "Semua" || a.namaSiswa === appliedFilter.pilihOrang;
     const matchJenis = appliedFilter.jenisFilter === "Semua Aktivitas" || a.jenis === appliedFilter.jenisFilter;
     return matchMulai && matchSelesai && matchOrang && matchJenis;
   });
 
-  function handleSwitchTab(newTab: "guru" | "siswa") {
-    setTab(newTab);
-    setPilihOrang("Semua");
-    setJenisFilter("Semua Aktivitas");
-    setAppliedFilter({ periodeMulai: "", periodeSelesai: "", pilihOrang: "Semua", jenisFilter: "Semua Aktivitas" });
-  }
-
   function handleDownload(format: "xlsx" | "csv") {
     const isGuru = tab === "guru";
     const rows = isGuru
-      ? filteredGuru.map((a) => ({ Waktu: `${a.tanggal} ${a.waktu}`, "ID Guru": a.idGuru, "Nama Guru": a.namaGuru, Aktivitas: a.jenis, Keterangan: a.keterangan }))
-      : filteredSiswa.map((a) => ({ Waktu: `${a.tanggal} ${a.waktu}`, "ID Siswa": a.idSiswa, "Nama Siswa": a.namaSiswa, Kelas: a.kelas, Aktivitas: a.jenis, Keterangan: a.keterangan }));
+      ? filteredGuru.map((a) => {
+          const { tanggal, waktu } = formatTanggalWaktu(a.createdAt);
+          return { Waktu: `${tanggal} ${waktu}`, "ID Guru": a.idGuru, "Nama Guru": a.namaGuru, Aktivitas: a.jenis, Keterangan: a.keterangan };
+        })
+      : filteredSiswa.map((a) => {
+          const { tanggal, waktu } = formatTanggalWaktu(a.createdAt);
+          return { Waktu: `${tanggal} ${waktu}`, "ID Siswa": a.idSiswa, "Nama Siswa": a.namaSiswa, Kelas: a.kelas, Aktivitas: a.jenis, Keterangan: a.keterangan };
+        });
 
     const filename = isGuru ? "rekap-aktivitas-guru" : "rekap-aktivitas-siswa";
     const sheetName = isGuru ? "Aktivitas Guru" : "Aktivitas Siswa";
+
+    if (rows.length === 0) {
+      setShowDownloadModal(false);
+      return;
+    }
 
     if (format === "xlsx") exportToExcel(rows, sheetName, filename);
     else exportToCSV(rows, filename);
@@ -92,7 +128,6 @@ export default function RekapAktivitasPage() {
         Gunakan filter untuk menampilkan aktivitas {tab === "guru" ? "guru" : "siswa"} yang ingin direkap.
       </p>
 
-      {/* Tabs */}
       <div className="animate-fade-in-up mt-6 inline-flex gap-1 rounded-2xl border border-border bg-surface p-1.5" style={{ animationDelay: "100ms" }}>
         <button
           onClick={() => handleSwitchTab("guru")}
@@ -108,7 +143,6 @@ export default function RekapAktivitasPage() {
         </button>
       </div>
 
-      {/* Filter box */}
       <div className="animate-fade-in-up mt-5 rounded-2xl border border-border bg-surface p-6" style={{ animationDelay: "140ms" }}>
         <div className="mb-5 flex items-center gap-2 text-sm font-medium text-white">
           <ListFilter size={16} /> Parameter Filter
@@ -185,7 +219,6 @@ export default function RekapAktivitasPage() {
         </button>
       </div>
 
-      {/* Hasil */}
       <div className="animate-fade-in-up mt-5 overflow-hidden rounded-2xl border border-border bg-surface" style={{ animationDelay: "180ms" }}>
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border p-6">
           <div>
@@ -202,69 +235,72 @@ export default function RekapAktivitasPage() {
           </button>
         </div>
 
-        <table className="w-full text-left text-sm">
-          <thead>
-            <tr className="border-b border-border text-xs uppercase tracking-wide text-muted">
-              <th className="px-6 py-4 font-medium">Waktu</th>
-              <th className="px-6 py-4 font-medium">ID {tab === "guru" ? "Guru" : "Siswa"}</th>
-              <th className="px-6 py-4 font-medium">Nama {tab === "guru" ? "Guru" : "Siswa"}</th>
-              {tab === "siswa" && <th className="px-6 py-4 font-medium">Kelas</th>}
-              <th className="px-6 py-4 font-medium">Aktivitas</th>
-              <th className="px-6 py-4 font-medium">Keterangan</th>
-            </tr>
-          </thead>
-          <tbody>
-            {tab === "guru"
-              ? filteredGuru.map((a) => (
-                  <tr key={a.id} className="border-b border-border/60 transition-colors last:border-0 hover:bg-white/[0.02]">
-                    <td className="px-6 py-4">
-                      <p className="text-white">{a.tanggal}</p>
-                      <p className="text-xs text-muted">{a.waktu}</p>
-                    </td>
-                    <td className="px-6 py-4 text-primary">{a.idGuru}</td>
-                    <td className="px-6 py-4 font-medium text-white">{a.namaGuru}</td>
-                    <td className="px-6 py-4">
-                      <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ${getJenisBadge(a.jenis)}`}>
-                        <span className={`h-1.5 w-1.5 rounded-full ${getJenisDot(a.jenis)}`} />
-                        {a.jenis}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-gray-300">{a.keterangan}</td>
-                  </tr>
-                ))
-              : filteredSiswa.map((a) => (
-                  <tr key={a.id} className="border-b border-border/60 transition-colors last:border-0 hover:bg-white/[0.02]">
-                    <td className="px-6 py-4">
-                      <p className="text-white">{a.tanggal}</p>
-                      <p className="text-xs text-muted">{a.waktu}</p>
-                    </td>
-                    <td className="px-6 py-4 text-gray-300">{a.idSiswa}</td>
-                    <td className="px-6 py-4 font-medium text-white">{a.namaSiswa}</td>
-                    <td className="px-6 py-4 text-gray-300">{a.kelas}</td>
-                    <td className="px-6 py-4">
-                      <span className={`rounded-full px-3 py-1 text-xs font-medium ${getJenisBadgeSiswa(a.jenis)}`}>
-                        {a.jenis.toUpperCase()}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-gray-300">{a.keterangan}</td>
-                  </tr>
-                ))}
-            {(tab === "guru" ? filteredGuru.length : filteredSiswa.length) === 0 && (
-              <tr>
-                <td colSpan={tab === "guru" ? 5 : 6} className="px-6 py-10 text-center text-muted">
-                  Tidak ada data ditemukan untuk filter ini.
-                </td>
+        {loading ? (
+          <div className="flex items-center justify-center gap-2 py-16 text-muted">
+            <Loader2 size={18} className="animate-spin" /> Memuat data...
+          </div>
+        ) : (
+          <table className="w-full text-left text-sm">
+            <thead>
+              <tr className="border-b border-border text-xs uppercase tracking-wide text-muted">
+                <th className="px-6 py-4 font-medium">Waktu</th>
+                <th className="px-6 py-4 font-medium">ID {tab === "guru" ? "Guru" : "Siswa"}</th>
+                <th className="px-6 py-4 font-medium">Nama {tab === "guru" ? "Guru" : "Siswa"}</th>
+                {tab === "siswa" && <th className="px-6 py-4 font-medium">Kelas</th>}
+                <th className="px-6 py-4 font-medium">Aktivitas</th>
+                <th className="px-6 py-4 font-medium">Keterangan</th>
               </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {tab === "guru"
+                ? filteredGuru.map((a) => {
+                    const { tanggal, waktu } = formatTanggalWaktu(a.createdAt);
+                    return (
+                      <tr key={a.id} className="border-b border-border/60 transition-colors last:border-0 hover:bg-white/[0.02]">
+                        <td className="px-6 py-4">
+                          <p className="text-white">{tanggal}</p>
+                          <p className="text-xs text-muted">{waktu}</p>
+                        </td>
+                        <td className="px-6 py-4 text-primary">{a.idGuru}</td>
+                        <td className="px-6 py-4 font-medium text-white">{a.namaGuru}</td>
+                        <td className="px-6 py-4 text-gray-300">{a.jenis}</td>
+                        <td className="px-6 py-4 text-gray-300">{a.keterangan}</td>
+                      </tr>
+                    );
+                  })
+                : filteredSiswa.map((a) => {
+                    const { tanggal, waktu } = formatTanggalWaktu(a.createdAt);
+                    return (
+                      <tr key={a.id} className="border-b border-border/60 transition-colors last:border-0 hover:bg-white/[0.02]">
+                        <td className="px-6 py-4">
+                          <p className="text-white">{tanggal}</p>
+                          <p className="text-xs text-muted">{waktu}</p>
+                        </td>
+                        <td className="px-6 py-4 text-gray-300">{a.idSiswa}</td>
+                        <td className="px-6 py-4 font-medium text-white">{a.namaSiswa}</td>
+                        <td className="px-6 py-4 text-gray-300">{a.kelas}</td>
+                        <td className="px-6 py-4 text-gray-300">{a.jenis}</td>
+                        <td className="px-6 py-4 text-gray-300">{a.keterangan}</td>
+                      </tr>
+                    );
+                  })}
+              {(tab === "guru" ? filteredGuru.length : filteredSiswa.length) === 0 && (
+                <tr>
+                  <td colSpan={tab === "guru" ? 5 : 6} className="px-6 py-16 text-center text-muted">
+                    Belum ada data aktivitas {tab === "guru" ? "guru" : "siswa"}. Data akan muncul otomatis setelah role {tab === "guru" ? "Guru" : "Siswa"} aktif digunakan.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        )}
+      </div>
 
-        <div className="flex items-center justify-between border-t border-border p-5 text-sm text-muted">
-          <p>
-            Menampilkan {tab === "guru" ? filteredGuru.length : filteredSiswa.length} dari{" "}
-            {tab === "guru" ? aktivitasGuruList.length : aktivitasSiswaLogList.length} entri
-          </p>
-        </div>
+      <div className="mt-5 flex items-center justify-between text-sm text-muted">
+        <p>
+          Menampilkan {tab === "guru" ? filteredGuru.length : filteredSiswa.length} dari{" "}
+          {tab === "guru" ? aktivitasGuru.length : aktivitasSiswa.length} entri
+        </p>
       </div>
 
       <DownloadRekapModal
