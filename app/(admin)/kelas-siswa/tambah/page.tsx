@@ -1,10 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ChevronDown, AlertCircle } from "lucide-react";
-import { waliKelasOptions } from "@/lib/dummy-data";
 import SuccessModal from "@/components/ui/SuccessModal";
 
 type FormErrors = { nama?: string; wali?: string; tahunAjaran?: string };
@@ -17,6 +16,19 @@ export default function TambahKelasPage() {
   const [errors, setErrors] = useState<FormErrors>({});
   const [showSuccess, setShowSuccess] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [waliKelasOptions, setWaliKelasOptions] = useState<string[]>([]);
+
+  useEffect(() => {
+    fetch("/api/guru")
+      .then((res) => res.json())
+      .then((data) => setWaliKelasOptions(data.map((g: any) => g.nama)));
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/guru")
+      .then((res) => res.json())
+      .then((data) => setWaliKelasOptions(data.map((g: any) => g.nama)));
+  }, []);
 
   function validate(): FormErrors {
     const newErrors: FormErrors = {};

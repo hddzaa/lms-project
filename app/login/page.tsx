@@ -36,12 +36,13 @@ export default function LoginPage() {
         e.preventDefault();
         setError("");
 
-        if (role !== "admin") {
-            setError("Role ini belum tersedia. Saat ini hanya role Admin yang aktif.");
+        if (role !== "admin" && role !== "guru") {
+            setError("Role ini belum tersedia. Saat ini hanya role Admin dan Guru yang aktif.");
             return;
         }
 
         const result = await signIn("credentials", {
+            role,
             username: id,
             password,
             redirect: false,
@@ -50,7 +51,7 @@ export default function LoginPage() {
         if (result?.error) {
             setError("ID atau kata sandi salah.");
         } else {
-            router.push("/dashboard");
+            router.push(role === "admin" ? "/dashboard" : "/guru/dashboard");
         }
     }
 
@@ -209,8 +210,8 @@ function RoleButton({
             type="button"
             onClick={onClick}
             className={`flex items-center gap-1.5 rounded-lg border px-4 py-2 text-xs font-semibold tracking-wide transition-all duration-200 ${active
-                    ? "border-primary/50 bg-primary-soft text-primary"
-                    : "border-border bg-black/30 text-gray-400 hover:text-gray-200"
+                ? "border-primary/50 bg-primary-soft text-primary"
+                : "border-border bg-black/30 text-gray-400 hover:text-gray-200"
                 }`}
         >
             {children}

@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { ChevronDown, Loader2 } from "lucide-react";
-import { waliKelasOptions } from "@/lib/dummy-data";
 import Toast from "@/components/ui/Toast";
 
 export default function EditKelasPage() {
@@ -19,6 +18,13 @@ export default function EditKelasPage() {
   const [showToast, setShowToast] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [kelasId, setKelasId] = useState("");
+  const [waliKelasOptions, setWaliKelasOptions] = useState<string[]>([]);
+
+  useEffect(() => {
+    fetch("/api/guru")
+      .then((res) => res.json())
+      .then((data) => setWaliKelasOptions(data.map((g: any) => g.nama)));
+  }, []);
 
   useEffect(() => {
     async function load() {
