@@ -10,6 +10,7 @@ declare module "next-auth" {
       role?: string;
       username?: string;
       mapel?: string;
+      kelasId?: string;
     };
   }
 
@@ -17,6 +18,7 @@ declare module "next-auth" {
     role?: string;
     username?: string;
     mapel?: string;
+    kelasId?: string;
   }
 }
 

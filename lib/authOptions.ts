@@ -4,6 +4,7 @@ import { connectDB } from "@/lib/mongodb";
 import Admin from "@/models/Admin";
 import Guru from "@/models/Guru";
 import type { NextAuthOptions } from "next-auth";
+import Siswa from "@/models/Siswa";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -34,6 +35,20 @@ export const authOptions: NextAuthOptions = {
           return { id: guru._id.toString(), name: guru.nama, username: guru.nip, role: "guru", mapel: guru.mapel };
         }
 
+        if (credentials.role === "siswa") {
+          const siswa = await Siswa.findOne({ nis: credentials.username });
+          if (!siswa) return null;
+          const isValid = await bcrypt.compare(credentials.password, siswa.password);
+          if (!isValid) return null;
+          return {
+            id: siswa._id.toString(),
+            name: siswa.nama,
+            username: siswa.nis,
+            role: "siswa",
+            kelasId: siswa.kelasId.toString(),
+          };
+        }
+
         return null;
       },
     }),
@@ -46,6 +61,7 @@ export const authOptions: NextAuthOptions = {
         token.role = (user as any).role;
         token.username = (user as any).username;
         token.mapel = (user as any).mapel;
+        token.kelasId = (user as any).kelasId;
       }
       return token;
     },
@@ -55,6 +71,7 @@ export const authOptions: NextAuthOptions = {
         (session.user as any).role = token.role;
         (session.user as any).username = token.username;
         (session.user as any).mapel = token.mapel;
+        (session.user as any).kelasId = token.kelasId;
       }
       return session;
     },

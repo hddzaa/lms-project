@@ -36,7 +36,7 @@ export default function LoginPage() {
         e.preventDefault();
         setError("");
 
-        if (role !== "admin" && role !== "guru") {
+        if (role !== "admin" && role !== "guru" && role !== "siswa") {
             setError("Role ini belum tersedia. Saat ini hanya role Admin dan Guru yang aktif.");
             return;
         }
@@ -51,7 +51,9 @@ export default function LoginPage() {
         if (result?.error) {
             setError("ID atau kata sandi salah.");
         } else {
-            router.push(role === "admin" ? "/dashboard" : "/guru/dashboard");
+            if (role === "admin") router.push("/dashboard");
+            else if (role === "guru") router.push("/guru/dashboard");
+            else router.push("/siswa/dashboard");
         }
     }
 
