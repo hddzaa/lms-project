@@ -20,3 +20,11 @@ export function exportToCSV(rows: Record<string, any>[], filename: string) {
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
 }
+
+export function downloadTemplateSiswa() {
+  const template = [
+    { "Nama Lengkap": "Muhammad Aris", "NIS": "202400999", "Email": "aris@aetheris.edu", "Jenis Kelamin": "Laki-laki", "Password": "siswa123" },
+    { "Nama Lengkap": "Siti Nurhaliza", "NIS": "202401000", "Email": "", "Jenis Kelamin": "Perempuan", "Password": "siswa123" },
+  ];
+  exportToExcel(template, "Template Siswa", "template-import-siswa");
+}

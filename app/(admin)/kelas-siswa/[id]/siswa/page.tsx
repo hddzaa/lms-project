@@ -3,10 +3,11 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { Search, Filter, Plus, Pencil, Trash2, ChevronLeft, Loader2 } from "lucide-react";
+import { Upload, Search, Filter, Plus, Pencil, Trash2, ChevronLeft, Loader2 } from "lucide-react";
 import { initials } from "@/lib/dummy-data";
 import ConfirmDeleteModal from "@/components/ui/ConfirmDeleteModal";
 import Toast from "@/components/ui/Toast";
+import ImportSiswaModal from "@/components/kelas-siswa/ImportSiswaModal";
 
 type Siswa = { id: string; nama: string; nis: string; email: string; gender: "Laki-laki" | "Perempuan" };
 type KelasInfo = { id: string; grade: string; name: string; waliKelas: string; kapasitas: number };
@@ -24,6 +25,7 @@ export default function KelolaSiswaPage() {
   const [search, setSearch] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<Siswa | null>(null);
   const [toastOpen, setToastOpen] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
 
   async function fetchData() {
     setLoading(true);
@@ -109,10 +111,16 @@ export default function KelolaSiswaPage() {
           />
         </div>
         <div className="flex gap-3">
-          <button className="flex items-center gap-2 rounded-xl border border-border bg-surface px-4 py-2.5 text-sm text-gray-300 transition-colors hover:bg-white/5">
-            <Filter size={15} /> Filter
+          <button
+            onClick={() => setShowImportModal(true)}
+            className="flex items-center gap-2 rounded-full border border-border px-5 py-2.5 text-sm text-gray-300 transition-colors hover:bg-white/5"
+          >
+            <Upload size={16} /> Import Excel
           </button>
-          <Link href={`/kelas-siswa/${kelas.id}/siswa/tambah`} className="flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-bg transition-transform hover:scale-105">
+          <Link
+            href={`/kelas-siswa/${kelas.id}/siswa/tambah`}
+            className="flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-bg transition-transform hover:scale-105"
+          >
             <Plus size={16} /> Tambah Siswa
           </Link>
         </div>
@@ -185,6 +193,13 @@ export default function KelolaSiswaPage() {
       />
 
       <Toast open={toastOpen} onClose={() => setToastOpen(false)} message="Siswa berhasil dihapus" />
+
+      <ImportSiswaModal
+        open={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        kelasId={params.id}
+        onImported={fetchData}
+      />
     </div>
   );
 }
