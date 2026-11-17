@@ -2,10 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Users, Pencil, Trash2, Loader2, Eye } from "lucide-react";
+import { Eye, Loader2 } from "lucide-react";
 import { initials } from "@/lib/dummy-data";
-import ConfirmDeleteModal from "@/components/ui/ConfirmDeleteModal";
-import Toast from "@/components/ui/Toast";
 
 type Kelas = {
   id: string;
@@ -22,34 +20,21 @@ type Kelas = {
 export default function GuruKelasSiswaPage() {
   const [kelas, setKelas] = useState<Kelas[]>([]);
   const [loading, setLoading] = useState(true);
-  const [deleteTarget, setDeleteTarget] = useState<Kelas | null>(null);
-  const [toastOpen, setToastOpen] = useState(false);
-
-  async function fetchKelas() {
-    setLoading(true);
-    const res = await fetch("/api/guru/kelas");
-    const data = await res.json();
-    setKelas(data);
-    setLoading(false);
-  }
 
   useEffect(() => {
+    async function fetchKelas() {
+      const res = await fetch("/api/guru/kelas");
+      if (res.ok) setKelas(await res.json());
+      setLoading(false);
+    }
     fetchKelas();
   }, []);
-
-  async function handleConfirmDelete() {
-    if (!deleteTarget) return;
-    await fetch(`/api/kelas/${deleteTarget.id}`, { method: "DELETE" });
-    setKelas((prev) => prev.filter((k) => k.id !== deleteTarget.id));
-    setDeleteTarget(null);
-    setToastOpen(true);
-  }
 
   return (
     <div>
       <h1 className="animate-fade-in-up text-2xl font-semibold text-white">Kelas & Siswa</h1>
       <p className="animate-fade-in-up mt-1 text-muted" style={{ animationDelay: "60ms" }}>
-        Kelola kelas yang Anda wali-i, dan lihat kelas tempat Anda mengajar.
+        Lihat kelas yang Anda wali-i dan kelas tempat Anda mengajar.
       </p>
 
       <div className="animate-fade-in-up mt-6 overflow-hidden rounded-2xl border border-border bg-surface" style={{ animationDelay: "120ms" }}>
@@ -98,31 +83,15 @@ export default function GuruKelasSiswaPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`rounded-full px-3 py-1 text-xs font-medium ${
-                        isWali ? "bg-primary-soft text-primary" : "bg-white/10 text-gray-300"
-                      }`}>
+                      <span className={`rounded-full px-3 py-1 text-xs font-medium ${isWali ? "bg-primary-soft text-primary" : "bg-white/10 text-gray-300"}`}>
                         {isWali ? "Wali Kelas" : "Pengajar"}
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="flex items-center justify-end gap-3">
-                        {isWali ? (
-                          <>
-                            <Link href={`/guru/kelas-siswa/${k.id}/siswa`} title="Kelola Siswa" className="text-primary transition-transform hover:scale-110">
-                              <Users size={17} />
-                            </Link>
-                            <Link href={`/guru/kelas-siswa/${k.id}/edit`} title="Edit Kelas" className="text-gray-400 transition-transform hover:scale-110 hover:text-gray-200">
-                              <Pencil size={16} />
-                            </Link>
-                            <button title="Hapus Kelas" onClick={() => setDeleteTarget(k)} className="text-red-400 transition-transform hover:scale-110 hover:text-red-300">
-                              <Trash2 size={16} />
-                            </button>
-                          </>
-                        ) : (
-                          <Link href={`/guru/kelas-siswa/${k.id}/siswa`} title="Lihat Siswa" className="text-gray-400 transition-transform hover:scale-110 hover:text-gray-200">
-                            <Eye size={17} />
-                          </Link>
-                        )}
+                      <div className="flex items-center justify-end">
+                        <Link href={`/guru/kelas-siswa/${k.id}/siswa`} title="Lihat Siswa" className="text-gray-400 transition-transform hover:scale-110 hover:text-gray-200">
+                          <Eye size={17} />
+                        </Link>
                       </div>
                     </td>
                   </tr>
@@ -139,15 +108,6 @@ export default function GuruKelasSiswaPage() {
           </table>
         )}
       </div>
-
-      <ConfirmDeleteModal
-        open={!!deleteTarget}
-        onClose={() => setDeleteTarget(null)}
-        onConfirm={handleConfirmDelete}
-        itemLabel={deleteTarget ? `kelas ${deleteTarget.grade} ${deleteTarget.name}` : "data ini"}
-      />
-
-      <Toast open={toastOpen} onClose={() => setToastOpen(false)} message="Kelas berhasil dihapus" />
     </div>
   );
 }
