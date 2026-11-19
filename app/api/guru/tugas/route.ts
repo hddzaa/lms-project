@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/authOptions";
 import { connectDB } from "@/lib/mongodb";
 import Tugas from "@/models/Tugas";
 import TugasSubmission from "@/models/TugasSubmission";
+import { catatAktivitasGuru } from "@/lib/aktivitasLog";
 
 async function guruOnly() {
   const session = await getServerSession(authOptions);
@@ -53,5 +54,6 @@ export async function POST(req: Request) {
     deadline: new Date(b.deadline),
     guruId: session.user.id,
   });
+  await catatAktivitasGuru(session.user.id, "Membuat Tugas", `Membuat ${tugas.jenis} "${tugas.judul}" (${tugas.mapel})`);
   return NextResponse.json(tugas, { status: 201 });
 }

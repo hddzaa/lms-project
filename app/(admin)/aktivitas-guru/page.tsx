@@ -18,15 +18,24 @@ const jenisBadgeMap: Record<string, string> = {
   "Membuat Assessment": "bg-violet-400/10 text-violet-300",
   "Menilai Tugas": "bg-indigo-400/10 text-indigo-300",
   "Mengedit Assessment": "bg-rose-400/10 text-rose-300",
+  "Membuat Tugas": "bg-amber-400/10 text-amber-300",
 };
 const jenisDotMap: Record<string, string> = {
   "Upload Materi": "bg-cyan-300",
   "Membuat Assessment": "bg-violet-300",
   "Menilai Tugas": "bg-indigo-300",
   "Mengedit Assessment": "bg-rose-300",
+  "Membuat Tugas": "bg-amber-300",
 };
 
-const jenisOptions = ["Semua Aktivitas", "Upload Materi", "Membuat Assessment", "Menilai Tugas", "Mengedit Assessment"];
+const jenisOptions = [
+  "Semua Aktivitas",
+  "Upload Materi",
+  "Membuat Assessment",
+  "Mengedit Assessment",
+  "Membuat Tugas",
+  "Menilai Tugas",
+];
 
 function formatTanggalWaktu(iso: string) {
   const d = new Date(iso);
@@ -40,14 +49,16 @@ export default function AktivitasGuruPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [jenisFilter, setJenisFilter] = useState("Semua Aktivitas");
+  const [tanggal, setTanggal] = useState("");
   const [selected, setSelected] = useState<Aktivitas | null>(null);
 
   useEffect(() => {
-    fetch("/api/aktivitas-guru")
+    setLoading(true);
+    fetch(`/api/aktivitas-guru${tanggal ? `?tanggal=${tanggal}` : ""}`)
       .then((res) => res.json())
-      .then((d) => setData(d))
+      .then((d) => setData(Array.isArray(d) ? d : []))
       .finally(() => setLoading(false));
-  }, []);
+  }, [tanggal]);
 
   const filtered = data.filter((a) => {
     const matchSearch = a.namaGuru.toLowerCase().includes(search.toLowerCase());
@@ -93,7 +104,12 @@ export default function AktivitasGuruPage() {
           <label className="mb-1.5 block text-xs font-medium tracking-wide text-muted">TANGGAL</label>
           <div className="relative">
             <Calendar size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" />
-            <input type="date" className="w-full rounded-xl border border-border bg-black/30 py-2.5 pl-10 pr-3 text-sm text-gray-200 outline-none focus:border-primary/50 [color-scheme:dark]" />
+            <input
+              type="date"
+              value={tanggal}
+              onChange={(e) => setTanggal(e.target.value)}
+              className="w-full rounded-xl border border-border bg-black/30 py-2.5 pl-10 pr-3 text-sm text-gray-200 outline-none focus:border-primary/50 [color-scheme:dark]"
+            />
           </div>
         </div>
       </div>
@@ -117,18 +133,18 @@ export default function AktivitasGuruPage() {
             </thead>
             <tbody>
               {filtered.map((a) => {
-                const { tanggal, waktu } = formatTanggalWaktu(a.createdAt);
+                const { tanggal: tgl, waktu } = formatTanggalWaktu(a.createdAt);
                 return (
                   <tr key={a.id} className="border-b border-border/60 transition-colors last:border-0 hover:bg-white/[0.02]">
                     <td className="px-6 py-4">
-                      <p className="text-white">{tanggal}</p>
+                      <p className="text-white">{tgl}</p>
                       <p className="text-xs text-muted">{waktu}</p>
                     </td>
                     <td className="px-6 py-4 text-gray-300">{a.idGuru}</td>
                     <td className="px-6 py-4 font-medium text-white">{a.namaGuru}</td>
                     <td className="px-6 py-4">
-                      <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ${jenisBadgeMap[a.jenis]}`}>
-                        <span className={`h-1.5 w-1.5 rounded-full ${jenisDotMap[a.jenis]}`} />
+                      <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ${jenisBadgeMap[a.jenis] ?? "bg-white/10 text-gray-300"}`}>
+                        <span className={`h-1.5 w-1.5 rounded-full ${jenisDotMap[a.jenis] ?? "bg-gray-400"}`} />
                         {a.jenis}
                       </span>
                     </td>
@@ -144,7 +160,7 @@ export default function AktivitasGuruPage() {
               {filtered.length === 0 && (
                 <tr>
                   <td colSpan={6} className="px-6 py-16 text-center text-muted">
-                    Belum ada data aktivitas guru. Data akan muncul otomatis setelah role Guru aktif digunakan.
+                    Belum ada data aktivitas guru{tanggal ? " pada tanggal ini" : ""}.
                   </td>
                 </tr>
               )}
@@ -163,14 +179,23 @@ export default function AktivitasGuruPage() {
       </div>
 
       {selected && (
-        <DetailModal aktivitas={selected} allData={data} onClose={() => setSelected(null)} />
+        <DetailModal aktivitas={selected} onClose={() => setSelected(null)} />
       )}
     </div>
   );
 }
 
-function DetailModal({ aktivitas, allData, onClose }: { aktivitas: Aktivitas; allData: Aktivitas[]; onClose: () => void }) {
-  const riwayat = allData.filter((a) => a.guruId === aktivitas.guruId).slice(0, 5);
+function DetailModal({ aktivitas, onClose }: { aktivitas: Aktivitas; onClose: () => void }) {
+  const [riwayat, setRiwayat] = useState<Aktivitas[]>([]);
+
+  // Riwayat guru ini diambil tanpa filter tanggal, supaya tidak ikut terpengaruh filter di halaman
+  useEffect(() => {
+    fetch("/api/aktivitas-guru")
+      .then((res) => res.json())
+      .then((all: Aktivitas[]) =>
+        setRiwayat((Array.isArray(all) ? all : []).filter((a) => a.guruId === aktivitas.guruId).slice(0, 5))
+      );
+  }, [aktivitas.guruId]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={onClose}>

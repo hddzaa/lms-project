@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import { connectDB } from "@/lib/mongodb";
 import Assessment from "@/models/Assessment";
+import { catatAktivitasGuru } from "@/lib/aktivitasLog";
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -52,6 +53,8 @@ export async function POST(req: Request) {
     guruNama: session.user.name,
     soal: [],
   });
+
+  await catatAktivitasGuru(session.user.id, "Membuat Assessment", `Membuat assessment "${body.judul}" (${body.mapel})`);
 
   return NextResponse.json({ ...assessment.toObject(), id: assessment._id.toString() });
 }

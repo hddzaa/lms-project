@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import { connectDB } from "@/lib/mongodb";
 import Assessment from "@/models/Assessment";
+import { catatAktivitasGuru } from "@/lib/aktivitasLog";
 
 async function checkOwnership(id: string, guruId: string) {
   const a: any = await Assessment.findById(id).lean();
@@ -52,6 +53,7 @@ export async function PUT(req: Request, context: { params: Promise<{ id: string 
 
   const body = await req.json();
   const updated = await Assessment.findByIdAndUpdate(id, body, { new: true }).lean();
+  await catatAktivitasGuru(session.user.id, "Mengedit Assessment", `Mengedit assessment "${(updated as any)?.judul ?? ""}"`);
   return NextResponse.json({ ...updated, id: (updated as any)._id.toString() });
 }
 

@@ -4,6 +4,8 @@ import { authOptions } from "@/lib/authOptions";
 import { connectDB } from "@/lib/mongodb";
 import Tugas from "@/models/Tugas";
 import TugasSubmission from "@/models/TugasSubmission";
+import { catatAktivitasGuru } from "@/lib/aktivitasLog";
+import "@/models/Siswa";
 
 export async function PUT(req: Request, context: { params: Promise<{ id: string }> }) {
   const { id } = await context.params;
@@ -26,5 +28,11 @@ export async function PUT(req: Request, context: { params: Promise<{ id: string 
     { new: true }
   );
   if (!sub) return NextResponse.json({ error: "Pengumpulan tidak ditemukan" }, { status: 404 });
+  await sub.populate("siswaId", "nama");
+  await catatAktivitasGuru(
+    session.user.id,
+    "Menilai Tugas",
+    `Menilai "${tugas.judul}" milik ${(sub as any).siswaId?.nama ?? "siswa"} (nilai ${n})`
+  );
   return NextResponse.json(sub);
 }

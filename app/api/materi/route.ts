@@ -6,6 +6,7 @@ import Materi from "@/models/Materi";
 import Kelas from "@/models/Kelas";
 import fs from "fs/promises";
 import path from "path";
+import { catatAktivitasGuru } from "@/lib/aktivitasLog";
 
 export async function GET() {
     const session = await getServerSession(authOptions);
@@ -71,6 +72,8 @@ export async function POST(req: Request) {
         guruNama: session.user.name,
         files: savedFiles,
     });
+
+    await catatAktivitasGuru(session.user.id, "Upload Materi", `Mengunggah materi "${judul}" (${mapel})`);
 
     return NextResponse.json({ ...materi.toObject(), id: materi._id.toString() });
 }

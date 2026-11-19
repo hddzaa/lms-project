@@ -5,7 +5,7 @@ const AktivitasGuruSchema = new Schema(
     guruId: { type: Schema.Types.ObjectId, ref: "Guru", required: true },
     jenis: {
       type: String,
-      enum: ["Upload Materi", "Membuat Assessment", "Menilai Tugas", "Mengedit Assessment"],
+      enum: ["Upload Materi", "Membuat Assessment", "Mengedit Assessment", "Membuat Tugas", "Menilai Tugas"],
       required: true,
     },
     keterangan: { type: String, required: true },
@@ -13,5 +13,4 @@ const AktivitasGuruSchema = new Schema(
   { timestamps: true }
 );
 
-const AktivitasGuru = models.AktivitasGuru || model("AktivitasGuru", AktivitasGuruSchema);
-export default AktivitasGuru;
+export default models.AktivitasGuru || model("AktivitasGuru", AktivitasGuruSchema);
