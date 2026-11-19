@@ -175,6 +175,9 @@ export default function SoalBuilderPage() {
 
   return (
     <div>
+      <Link href="/guru/assessment" className="mb-4 inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm text-gray-300 transition-colors hover:bg-white/5">
+        <ChevronLeft size={15} /> Kembali
+      </Link>
       <h1 className="text-3xl font-bold text-white">Pembuatan Soal</h1>
       <p className="mt-2 max-w-2xl text-muted">
         Lengkapi detail butir soal untuk asesmen "{data.judul}". Pastikan setiap soal memiliki bobot yang sesuai.
@@ -310,10 +313,7 @@ export default function SoalBuilderPage() {
         {data.soal.length === 0 && <p className="py-8 text-center text-sm text-muted">Belum ada soal ditambahkan.</p>}
       </div>
 
-      <div className="mt-8 flex items-center justify-between border-t border-border pt-6">
-        <Link href="/guru/assessment" className="flex items-center gap-2 text-sm text-gray-300 hover:text-white">
-          <ChevronLeft size={15} /> Kembali
-        </Link>
+      <div className="mt-8 flex items-center justify-end border-t border-border pt-6">
         <div className="flex gap-3">
           <button onClick={handleSimpanDraft} className="rounded-full border border-border px-6 py-2.5 text-sm font-medium text-gray-300 transition-colors hover:bg-white/5">
             Simpan Draft

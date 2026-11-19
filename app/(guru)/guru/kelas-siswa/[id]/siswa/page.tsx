@@ -52,6 +52,9 @@ export default function GuruLihatSiswaPage() {
 
   return (
     <div>
+      <Link href="/guru/kelas-siswa" className="animate-fade-in-up mb-4 inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm text-gray-300 transition-colors hover:bg-white/5">
+        <ChevronLeft size={15} /> Kembali
+      </Link>
       <h1 className="animate-fade-in-up text-3xl font-bold text-white">Lihat Siswa</h1>
       <p className="animate-fade-in-up mt-2 max-w-2xl text-muted" style={{ animationDelay: "40ms" }}>
         Daftar siswa pada kelas ini. Halaman ini hanya untuk melihat data.
@@ -114,12 +117,6 @@ export default function GuruLihatSiswaPage() {
             )}
           </tbody>
         </table>
-      </div>
-
-      <div className="mt-5 flex justify-end">
-        <Link href="/guru/kelas-siswa" className="flex items-center gap-2 rounded-full border border-border px-5 py-2.5 text-gray-300 transition-colors hover:bg-white/5">
-          <ChevronLeft size={15} /> Kembali
-        </Link>
       </div>
     </div>
   );

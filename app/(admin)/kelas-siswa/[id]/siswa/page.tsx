@@ -70,7 +70,9 @@ export default function KelolaSiswaPage() {
   }
 
   return (
-    <div>
+    <div><Link href="/kelas-siswa" className="animate-fade-in-up mb-4 inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm text-gray-300 transition-colors hover:bg-white/5">
+      <ChevronLeft size={15} /> Kembali
+    </Link>
       <h1 className="animate-fade-in-up text-3xl font-bold text-white">Kelola Siswa</h1>
       <p className="animate-fade-in-up mt-2 max-w-2xl text-muted" style={{ animationDelay: "40ms" }}>
         Kelola seluruh siswa pada kelas yang dipilih secara efisien dengan sistem manajemen terpusat Aetheris.
@@ -178,12 +180,7 @@ export default function KelolaSiswaPage() {
         </table>
       </div>
 
-      <div className="mt-5 flex items-center justify-between text-sm text-muted">
-        <p>Menampilkan {filtered.length} dari {siswaList.length} siswa</p>
-        <Link href="/kelas-siswa" className="flex items-center gap-2 rounded-full border border-border px-5 py-2.5 text-gray-300 transition-colors hover:bg-white/5">
-          <ChevronLeft size={15} /> Kembali
-        </Link>
-      </div>
+      <p className="mt-5 text-sm text-muted">Menampilkan {filtered.length} dari {siswaList.length} siswa</p>
 
       <ConfirmDeleteModal
         open={!!deleteTarget}
