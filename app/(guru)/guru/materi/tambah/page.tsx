@@ -6,12 +6,11 @@ import Link from "next/link";
 import { ChevronDown, UploadCloud, AlertCircle } from "lucide-react";
 import SuccessModal from "@/components/ui/SuccessModal";
 
-type Kelas = { id: string; grade: string; name: string };
+type Opsi = { kelasId: string; grade: string; name: string; mapel: string };
 
 export default function TambahMateriPage() {
   const router = useRouter();
-  const [mapelOptions, setMapelOptions] = useState<string[]>([]);
-  const [kelasOptions, setKelasOptions] = useState<Kelas[]>([]);
+  const [opsi, setOpsi] = useState<Opsi[]>([]);
   const [judul, setJudul] = useState("");
   const [mapel, setMapel] = useState("");
   const [kelasId, setKelasId] = useState("");
@@ -22,13 +21,17 @@ export default function TambahMateriPage() {
   const [submitting, setSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
+  const mapelOptions = Array.from(new Set(opsi.map((o) => o.mapel)));
+
   useEffect(() => {
-    Promise.all([fetch("/api/mapel").then((r) => r.json()), fetch("/api/kelas").then((r) => r.json())]).then(
-      ([mapelData, kelasData]) => {
-        setMapelOptions(mapelData.map((m: any) => m.nama));
-        setKelasOptions(kelasData.map((k: any) => ({ id: k.id, grade: k.grade, name: k.name })));
-      }
-    );
+    fetch("/api/guru/mapel-kelas")
+      .then((r) => r.json())
+      .then((d: Opsi[]) => {
+        if (!Array.isArray(d)) return;
+        setOpsi(d);
+        const m = Array.from(new Set(d.map((o) => o.mapel)));
+        if (m.length === 1) setMapel(m[0]);
+      });
   }, []);
 
   function handleDrop(e: React.DragEvent) {
@@ -57,7 +60,8 @@ export default function TambahMateriPage() {
     setSubmitting(false);
 
     if (!res.ok) {
-      setError("Gagal menyimpan materi.");
+      const d = await res.json().catch(() => ({}));
+      setError(d.error || "Gagal menyimpan materi.");
       return;
     }
     setShowSuccess(true);
@@ -105,7 +109,7 @@ export default function TambahMateriPage() {
                   className="w-full appearance-none rounded-xl border border-border bg-black/30 px-4 py-3 text-sm text-gray-200 outline-none focus:border-primary/50"
                 >
                   <option value="">Pilih Kelas</option>
-                  {kelasOptions.map((k) => (<option key={k.id} value={k.id}>{k.grade} {k.name}</option>))}
+                  {opsi.map((k) => (<option key={k.kelasId} value={k.kelasId}>{k.grade} {k.name}</option>))}
                 </select>
                 <ChevronDown size={16} className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-muted" />
               </div>

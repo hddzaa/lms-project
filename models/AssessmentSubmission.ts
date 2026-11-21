@@ -5,11 +5,17 @@ const JawabanSchema = new Schema(
   { _id: false }
 );
 
+const SkorSchema = new Schema(
+  { soalId: { type: String, required: true }, skor: { type: Number, default: 0 } },
+  { _id: false }
+);
+
 const AssessmentSubmissionSchema = new Schema(
   {
     assessmentId: { type: Schema.Types.ObjectId, ref: "Assessment", required: true },
     siswaId: { type: Schema.Types.ObjectId, ref: "Siswa", required: true },
     jawaban: [JawabanSchema],
+    skor: [SkorSchema],
     status: { type: String, enum: ["Sedang Dikerjakan", "Perlu Dinilai", "Selesai"], default: "Sedang Dikerjakan" },
     nilai: { type: Number, default: null },
     waktuMulai: { type: Date, default: Date.now },

@@ -3,36 +3,35 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ChevronDown, Loader2 } from "lucide-react";
+import { ChevronDown, Loader2, AlertCircle } from "lucide-react";
 import Toast from "@/components/ui/Toast";
 
-type Kelas = { id: string; grade: string; name: string };
+type Opsi = { kelasId: string; grade: string; name: string; mapel: string };
 
 export default function EditMateriPage() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
 
   const [loading, setLoading] = useState(true);
-  const [mapelOptions, setMapelOptions] = useState<string[]>([]);
-  const [kelasOptions, setKelasOptions] = useState<Kelas[]>([]);
+  const [opsi, setOpsi] = useState<Opsi[]>([]);
   const [judul, setJudul] = useState("");
   const [mapel, setMapel] = useState("");
   const [kelasId, setKelasId] = useState("");
   const [deskripsi, setDeskripsi] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [showToast, setShowToast] = useState(false);
+  const [error, setError] = useState("");
+
+  const mapelOptions = Array.from(new Set([...opsi.map((o) => o.mapel), ...(mapel ? [mapel] : [])]));
 
   useEffect(() => {
     async function load() {
-      const [materiRes, mapelRes, kelasRes] = await Promise.all([
+      const [materiRes, opsiRes] = await Promise.all([
         fetch(`/api/materi/${params.id}`),
-        fetch("/api/mapel"),
-        fetch("/api/kelas"),
+        fetch("/api/guru/mapel-kelas"),
       ]);
-      const mapelData = await mapelRes.json();
-      const kelasData = await kelasRes.json();
-      setMapelOptions(mapelData.map((m: any) => m.nama));
-      setKelasOptions(kelasData.map((k: any) => ({ id: k.id, grade: k.grade, name: k.name })));
+      const opsiData = await opsiRes.json();
+      if (Array.isArray(opsiData)) setOpsi(opsiData);
 
       if (materiRes.ok) {
         const data = await materiRes.json();
@@ -48,13 +47,19 @@ export default function EditMateriPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setError("");
     setSubmitting(true);
-    await fetch(`/api/materi/${params.id}`, {
+    const res = await fetch(`/api/materi/${params.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ judul, mapel, kelasId, deskripsi }),
     });
     setSubmitting(false);
+    if (!res.ok) {
+      const d = await res.json().catch(() => ({}));
+      setError(d.error || "Gagal menyimpan perubahan.");
+      return;
+    }
     setShowToast(true);
   }
 
@@ -68,6 +73,9 @@ export default function EditMateriPage() {
 
   return (
     <div>
+      <Link href={`/guru/materi/${params.id}`} className="animate-fade-in-up mb-4 inline-block text-sm text-muted hover:text-white">
+        ← Kembali
+      </Link>
       <h1 className="animate-fade-in-up text-3xl font-bold text-white">Edit Materi</h1>
       <p className="animate-fade-in-up mt-2 text-muted" style={{ animationDelay: "40ms" }}>
         Perbarui informasi materi pembelajaran.
@@ -110,7 +118,7 @@ export default function EditMateriPage() {
                 className="w-full appearance-none rounded-xl border border-border bg-black/30 px-4 py-3 text-sm text-gray-200 outline-none focus:border-primary/50"
               >
                 <option value="">Pilih Kelas</option>
-                {kelasOptions.map((k) => (<option key={k.id} value={k.id}>{k.grade} {k.name}</option>))}
+                {opsi.map((k) => (<option key={k.kelasId} value={k.kelasId}>{k.grade} {k.name}</option>))}
               </select>
               <ChevronDown size={16} className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-muted" />
             </div>
@@ -122,8 +130,12 @@ export default function EditMateriPage() {
           value={deskripsi}
           onChange={(e) => setDeskripsi(e.target.value)}
           rows={5}
-          className="mb-8 w-full resize-none rounded-xl border border-border bg-black/30 px-4 py-3 text-sm text-gray-200 outline-none focus:border-primary/50"
+          className="mb-4 w-full resize-none rounded-xl border border-border bg-black/30 px-4 py-3 text-sm text-gray-200 outline-none focus:border-primary/50"
         />
+
+        {error && (
+          <p className="mb-4 flex items-center gap-1.5 text-xs text-red-400"><AlertCircle size={13} /> {error}</p>
+        )}
 
         <div className="flex justify-end gap-3 border-t border-border pt-6">
           <Link href={`/guru/materi/${params.id}`} className="rounded-full border border-border px-6 py-2.5 text-sm font-medium text-gray-300 transition-colors hover:bg-white/5">

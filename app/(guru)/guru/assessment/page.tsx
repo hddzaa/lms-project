@@ -137,7 +137,12 @@ export default function AssessmentListPage() {
                         Lanjutkan Draft
                       </Link>
                     ) : (
-                      <Link href={`/guru/assessment/${a.id}/soal`} className="text-gray-400 hover:text-gray-200"><Eye size={16} /></Link>
+                      <div className="flex items-center justify-end gap-3">
+                        <Link href={`/guru/assessment/${a.id}/nilai`} className="rounded-full border border-border px-4 py-1.5 text-xs font-medium text-gray-300 hover:bg-white/5">
+                          Nilai
+                        </Link>
+                        <Link href={`/guru/assessment/${a.id}/soal`} className="text-gray-400 hover:text-gray-200"><Eye size={16} /></Link>
+                      </div>
                     )}
                   </td>
                 </tr>

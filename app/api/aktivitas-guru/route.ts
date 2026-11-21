@@ -7,18 +7,18 @@ import "@/models/Guru";
 
 export async function GET(req: Request) {
   const session = await getServerSession(authOptions);
-  if (!session || session.user.role !== "admin") {
+  if (!session || !["admin", "kepsek", "kurikulum"].includes(session.user.role ?? "")) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   await connectDB();
-  const tanggal = new URL(req.url).searchParams.get("tanggal"); // YYYY-MM-DD
 
-  const filter: any = {};
+  const tanggal = new URL(req.url).searchParams.get("tanggal"); // format YYYY-MM-DD
+  const filter: Record<string, any> = {};
   if (tanggal && /^\d{4}-\d{2}-\d{2}$/.test(tanggal)) {
-    const start = new Date(`${tanggal}T00:00:00+07:00`);
-    const end = new Date(start.getTime() + 24 * 60 * 60 * 1000);
-    filter.createdAt = { $gte: start, $lt: end };
+    const mulai = new Date(`${tanggal}T00:00:00+07:00`);
+    const selesai = new Date(mulai.getTime() + 24 * 60 * 60 * 1000);
+    filter.createdAt = { $gte: mulai, $lt: selesai };
   }
 
   const data = await AktivitasGuru.find(filter)

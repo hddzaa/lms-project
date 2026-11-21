@@ -4,11 +4,13 @@ import { authOptions } from "@/lib/authOptions";
 import { connectDB } from "@/lib/mongodb";
 import Tugas from "@/models/Tugas";
 import TugasSubmission from "@/models/TugasSubmission";
+import "@/models/Kelas";
+import { bolehAkses } from "@/lib/aksesGuru";
 import { catatAktivitasGuru } from "@/lib/aktivitasLog";
 
 async function guruOnly() {
   const session = await getServerSession(authOptions);
-  if (!session || session.user.role !== "guru") return null;
+  if (!session || session.user.role !== "guru" || !session.user.id) return null;
   return session;
 }
 
@@ -38,10 +40,11 @@ export async function POST(req: Request) {
 
   const b = await req.json();
   if (!b.judul || !b.mapel || !b.kelasId || !b.deadline) {
-    return NextResponse.json(
-      { error: "Judul, mapel, kelas, dan deadline wajib diisi" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "Judul, mapel, kelas, dan deadline wajib diisi" }, { status: 400 });
+  }
+
+  if (!(await bolehAkses(session.user.id!, b.kelasId, b.mapel))) {
+    return NextResponse.json({ error: "Anda tidak mengampu mapel ini di kelas tersebut" }, { status: 403 });
   }
 
   const tugas = await Tugas.create({
@@ -54,6 +57,8 @@ export async function POST(req: Request) {
     deadline: new Date(b.deadline),
     guruId: session.user.id,
   });
-  await catatAktivitasGuru(session.user.id, "Membuat Tugas", `Membuat ${tugas.jenis} "${tugas.judul}" (${tugas.mapel})`);
+
+  await catatAktivitasGuru(session.user.id!, "Membuat Tugas", `Membuat ${b.jenis || "tugas"} "${b.judul}" (${b.mapel})`);
+
   return NextResponse.json(tugas, { status: 201 });
 }

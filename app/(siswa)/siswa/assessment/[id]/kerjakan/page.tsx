@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, ListOrdered, Hash, Timer, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
-import ConfirmDeleteModal from "@/components/ui/ConfirmDeleteModal";
+import ConfirmSubmitModal from "@/components/ui/ConfirmSubmitModal";
 
 type Soal = {
   id: string;
@@ -264,11 +264,10 @@ export default function KerjakanAssessmentPage() {
         </div>
       </div>
 
-      <ConfirmDeleteModal
+      <ConfirmSubmitModal
         open={showSubmitConfirm}
         onClose={() => setShowSubmitConfirm(false)}
         onConfirm={handleSubmit}
-        itemLabel={`assessment ini. Pastikan semua jawaban sudah terisi, Anda tidak bisa mengubahnya lagi setelah dikumpulkan`}
       />
     </div>
   );

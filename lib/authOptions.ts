@@ -19,12 +19,13 @@ export const authOptions: NextAuthOptions = {
         if (!credentials?.username || !credentials?.password || !credentials?.role) return null;
         await connectDB();
 
-        if (credentials.role === "admin") {
-          const admin = await Admin.findOne({ username: credentials.username });
+        if (["admin", "kepsek", "kurikulum"].includes(credentials.role)) {
+          const admin: any = await Admin.findOne({ username: credentials.username });
           if (!admin) return null;
+          if ((admin.role || "admin") !== credentials.role) return null;
           const isValid = await bcrypt.compare(credentials.password, admin.password);
           if (!isValid) return null;
-          return { id: admin._id.toString(), name: admin.nama, username: admin.username, role: "admin" };
+          return { id: admin._id.toString(), name: admin.nama, username: admin.username, role: admin.role || "admin" };
         }
 
         if (credentials.role === "guru") {

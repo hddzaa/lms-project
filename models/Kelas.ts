@@ -8,6 +8,7 @@ const KelasSchema = new Schema(
     waliKelas: { type: String, required: true },
     kapasitas: { type: Number, default: 36 },
     tahunAjaran: { type: String, required: true },
+    mapel: [{ type: String }],
   },
   { timestamps: true }
 );
