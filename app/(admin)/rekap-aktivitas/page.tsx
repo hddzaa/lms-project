@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { ChevronDown, Calendar, Search, Download, ListFilter, Loader2 } from "lucide-react";
 import { exportToExcel, exportToCSV } from "@/lib/export";
-import DownloadRekapModal from "@/components/rekap-aktivitas(admin)/DownloadRekapModal";
+import DownloadRekapModal from "@/components/rekap-aktivitas/DownloadRekapModal";
 import Toast from "@/components/ui/Toast";
 
 type AktivitasGuru = { id: string; idGuru: string; namaGuru: string; jenis: string; keterangan: string; createdAt: string };
