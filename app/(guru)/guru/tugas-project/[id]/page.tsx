@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import LampiranList from "@/components/tugas/LampiranList";
 
 type Sub = {
   _id: string;
@@ -63,15 +64,23 @@ export default function DetailTugasGuruPage() {
       <Link href="/guru/tugas-project" className="text-sm text-cyan-300 hover:underline">← Kembali</Link>
 
       <div className="mt-3 rounded-2xl border border-white/10 bg-white/5 p-5">
-        <div className="mb-2 flex gap-2 text-xs">
+        <div className="mb-2 flex items-center justify-between gap-2 text-xs">
           <span className="rounded-full bg-cyan-400/20 px-2.5 py-1 font-semibold capitalize text-cyan-300">{tugas.jenis}</span>
-          <span className="rounded-full bg-white/10 px-2.5 py-1 capitalize">{tugas.mode}</span>
+          <Link
+            href={`/guru/tugas-project/${id}/edit?from=detail`}
+            className="rounded-full border border-white/15 px-4 py-1.5 text-xs font-medium text-gray-200 hover:bg-white/10"
+          >
+            Edit Tugas
+          </Link>
         </div>
         <h1 className="text-2xl font-bold">{tugas.judul}</h1>
         <p className="mt-1 text-sm opacity-70">{tugas.mapel} • {tugas.kelasId?.grade} {tugas.kelasId?.name}</p>
         {tugas.deskripsi && <p className="mt-3 whitespace-pre-line text-sm opacity-90">{tugas.deskripsi}</p>}
+
+        <LampiranList files={tugas.files} judul="FILE SOAL" />
+
         <p className="mt-3 text-sm opacity-80">
-          Deadline: {new Date(tugas.deadline).toLocaleString("id-ID", { dateStyle: "long", timeStyle: "short" })}
+          Deadline: {new Date(tugas.deadline).toLocaleString("id-ID", { dateStyle: "long", timeStyle: "short", timeZone: "Asia/Jakarta" })}
         </p>
       </div>
 
@@ -100,7 +109,7 @@ export default function DetailTugasGuruPage() {
                     <p className="text-xs opacity-60">{s.siswaId?.nis}</p>
                   </td>
                   <td className="p-3">
-                    <p>{new Date(s.waktuKumpul).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" })}</p>
+                    <p>{new Date(s.waktuKumpul).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Jakarta" })}</p>
                     <span className={`mt-1 inline-block rounded-full px-2 py-0.5 text-xs ${s.status === "terlambat" ? "bg-red-500/20 text-red-300" : "bg-emerald-500/20 text-emerald-300"}`}>
                       {s.status === "terlambat" ? "Terlambat" : "Tepat waktu"}
                     </span>

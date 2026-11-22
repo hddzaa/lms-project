@@ -6,8 +6,7 @@ import Materi from "@/models/Materi";
 import Kelas from "@/models/Kelas";
 import { bolehAkses } from "@/lib/aksesGuru";
 import { catatAktivitasGuru } from "@/lib/aktivitasLog";
-import fs from "fs/promises";
-import path from "path";
+import { simpanFile } from "@/lib/simpanFile";
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -61,17 +60,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Anda tidak mengampu mapel ini di kelas tersebut" }, { status: 403 });
   }
 
-  const uploadDir = path.join(process.cwd(), "public", "uploads", "materi");
-  await fs.mkdir(uploadDir, { recursive: true });
-
   const files = formData.getAll("files") as File[];
   const saved = [];
   for (const file of files) {
     if (!(file instanceof File) || file.size === 0) continue;
-    const bytes = Buffer.from(await file.arrayBuffer());
-    const safeName = `${Date.now()}-${file.name.replace(/\s+/g, "_")}`;
-    await fs.writeFile(path.join(uploadDir, safeName), bytes);
-    saved.push({ name: file.name, url: `/uploads/materi/${safeName}`, type: file.type, size: file.size });
+    saved.push(await simpanFile(file, "materi"));
   }
 
   const materi: any = await Materi.create({

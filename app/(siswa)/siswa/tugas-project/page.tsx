@@ -2,95 +2,95 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Loader2, ClipboardList } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
-type Tugas = {
+type Item = {
   id: string;
   judul: string;
   jenis: "tugas" | "project";
-  mode: "individu" | "kelompok";
   mapel: string;
   guruNama: string;
   deadline: string;
-  submission: { status: "dikumpulkan" | "terlambat"; nilai: number | null } | null;
+  status: "belum" | "dikumpulkan" | "terlambat" | "dinilai";
+  nilai: number | null;
 };
 
+const filters = [
+  { value: "semua", label: "Semua" },
+  { value: "tugas", label: "Tugas" },
+  { value: "project", label: "Project" },
+];
+
+function statusInfo(i: Item) {
+  if (i.status === "dinilai") return { label: `Dinilai: ${i.nilai}`, cls: "bg-emerald-500/15 text-emerald-300" };
+  if (i.status === "terlambat") return { label: "Terlambat dikumpulkan", cls: "bg-amber-500/15 text-amber-300" };
+  if (i.status === "dikumpulkan") return { label: "Sudah dikumpulkan", cls: "bg-primary-soft text-primary" };
+  return { label: "Belum dikumpulkan", cls: "bg-white/5 text-gray-300" };
+}
+
 export default function SiswaTugasProjectPage() {
-  const [data, setData] = useState<Tugas[]>([]);
+  const [data, setData] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<"semua" | "tugas" | "project">("semua");
+  const [filter, setFilter] = useState("semua");
 
   useEffect(() => {
     fetch("/api/siswa/tugas")
       .then((r) => r.json())
-      .then((d) => setData(Array.isArray(d) ? d : []))
+      .then((d) => Array.isArray(d) && setData(d))
       .finally(() => setLoading(false));
   }, []);
 
-  const tampil = data.filter((t) => filter === "semua" || t.jenis === filter);
-
-  function badge(t: Tugas) {
-    if (t.submission?.nilai !== null && t.submission?.nilai !== undefined)
-      return { label: `Dinilai: ${t.submission.nilai}`, cls: "bg-primary-soft text-primary" };
-    if (t.submission)
-      return t.submission.status === "terlambat"
-        ? { label: "Terkumpul (Terlambat)", cls: "bg-red-500/15 text-red-400" }
-        : { label: "Sudah dikumpulkan", cls: "bg-emerald-500/15 text-emerald-400" };
-    if (new Date(t.deadline) < new Date()) return { label: "Lewat deadline", cls: "bg-red-500/15 text-red-400" };
-    return { label: "Belum dikumpulkan", cls: "bg-white/10 text-gray-300" };
-  }
+  const tampil = data.filter((i) => filter === "semua" || i.jenis === filter);
 
   return (
     <div>
-      <h1 className="animate-fade-in-up text-2xl font-semibold text-white">Tugas & Project</h1>
-      <p className="animate-fade-in-up mt-1 text-muted" style={{ animationDelay: "60ms" }}>
+      <h1 className="animate-fade-in-up text-3xl font-bold text-white">Tugas & Project</h1>
+      <p className="animate-fade-in-up mt-2 text-muted" style={{ animationDelay: "40ms" }}>
         Daftar tugas dan project dari guru di kelas Anda.
       </p>
 
-      <div className="animate-fade-in-up mt-6 flex gap-2" style={{ animationDelay: "100ms" }}>
-        {(["semua", "tugas", "project"] as const).map((f) => (
+      <div className="mt-6 flex gap-2">
+        {filters.map((f) => (
           <button
-            key={f}
-            onClick={() => setFilter(f)}
-            className={`rounded-full px-4 py-1.5 text-sm capitalize transition-colors ${
-              filter === f ? "bg-primary font-semibold text-bg" : "bg-white/10 text-gray-300 hover:bg-white/20"
+            key={f.value}
+            onClick={() => setFilter(f.value)}
+            className={`rounded-full px-5 py-2.5 text-sm font-medium transition-colors ${
+              filter === f.value ? "bg-primary text-bg" : "bg-surface text-gray-300 hover:bg-white/5"
             }`}
           >
-            {f}
+            {f.label}
           </button>
         ))}
       </div>
 
       {loading ? (
-        <div className="mt-6 flex items-center justify-center gap-2 rounded-2xl border border-border bg-surface py-16 text-muted">
-          <Loader2 size={18} className="animate-spin" /> Memuat tugas...
+        <div className="mt-8 flex items-center gap-2 text-muted">
+          <Loader2 size={18} className="animate-spin" /> Memuat data...
         </div>
       ) : tampil.length === 0 ? (
-        <div className="mt-6 flex flex-col items-center gap-3 rounded-2xl border border-border bg-surface py-16 text-muted">
-          <ClipboardList size={28} />
-          Belum ada tugas untuk kelas Anda.
-        </div>
+        <p className="mt-8 text-muted">Belum ada tugas.</p>
       ) : (
-        <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {tampil.map((t, i) => {
-            const b = badge(t);
+        <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {tampil.map((i, idx) => {
+            const s = statusInfo(i);
             return (
               <Link
-                key={t.id}
-                href={`/siswa/tugas-project/${t.id}`}
-                className="animate-fade-in-up rounded-2xl border border-border bg-surface p-5 transition-all duration-300 hover:-translate-y-1 hover:border-primary/30"
-                style={{ animationDelay: `${i * 40}ms` }}
+                key={i.id}
+                href={`/siswa/tugas-project/${i.id}`}
+                className="animate-fade-in-up rounded-2xl border border-border bg-surface p-6 transition-colors hover:bg-white/5"
+                style={{ animationDelay: `${idx * 40}ms` }}
               >
-                <div className="mb-2 flex items-center gap-2 text-xs">
-                  <span className="rounded-full bg-primary-soft px-2.5 py-1 font-medium capitalize text-primary">{t.jenis}</span>
-                  <span className="rounded-full bg-white/10 px-2.5 py-1 capitalize text-gray-300">{t.mode}</span>
-                </div>
-                <h3 className="text-base font-semibold text-white">{t.judul}</h3>
-                <p className="mt-1 text-xs text-muted">{t.mapel} · {t.guruNama}</p>
-                <p className="mt-3 text-xs text-gray-300">
-                  Deadline: {new Date(t.deadline).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Jakarta" })}
+                <span className="rounded-full bg-primary-soft px-3 py-1 text-xs font-medium capitalize text-primary">
+                  {i.jenis}
+                </span>
+                <h3 className="mt-3 text-xl font-bold text-white">{i.judul}</h3>
+                <p className="mt-1 text-sm text-muted">{i.mapel} · {i.guruNama}</p>
+                <p className="mt-4 text-sm text-gray-300">
+                  Deadline: {new Date(i.deadline).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" })}
                 </p>
-                <span className={`mt-3 inline-block rounded-full px-3 py-1 text-xs font-medium ${b.cls}`}>{b.label}</span>
+                <span className={`mt-4 inline-block rounded-full px-3 py-1.5 text-xs font-medium ${s.cls}`}>
+                  {s.label}
+                </span>
               </Link>
             );
           })}

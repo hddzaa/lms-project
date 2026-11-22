@@ -2,265 +2,161 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useSession } from "next-auth/react";
+import { Search, ChevronDown, Plus, Eye, Pencil, Trash2, ClipboardList, Loader2 } from "lucide-react";
+import ConfirmDeleteModal from "@/components/ui/ConfirmDeleteModal";
 
 type Tugas = {
   _id: string;
   judul: string;
-  deskripsi: string;
-  jenis: "tugas" | "project";
-  mode: "individu" | "kelompok";
+  jenis: string;
   mapel: string;
-  kelasId: { _id: string; grade: string; name: string } | string
+  kelasId?: { grade: string; name: string };
   deadline: string;
   jumlahKumpul: number;
+  files?: { url: string }[];
 };
 
-const kosong = { judul: "", deskripsi: "", jenis: "tugas", mode: "individu", mapel: "", kelasId: "", deadline: "" };
-
-const toLocalInput = (iso: string) => {
-  const d = new Date(iso);
-  d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
-  return d.toISOString().slice(0, 16);
+const jenisBadge: Record<string, string> = {
+  tugas: "bg-violet-400/10 text-violet-300",
+  project: "bg-emerald-400/10 text-emerald-300",
 };
 
-export default function TugasProjectGuruPage() {
-  const { data: session } = useSession();
-  const [list, setList] = useState<Tugas[]>([]);
-  const [kelas, setKelas] = useState<{ id: string; grade: string; name: string }[]>([]);
+export default function TugasProjectPage() {
+  const [data, setData] = useState<Tugas[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<"semua" | "tugas" | "project">("semua");
-  const [open, setOpen] = useState(false);
-  const [editId, setEditId] = useState<string | null>(null);
-  const [form, setForm] = useState<any>(kosong);
-  const [error, setError] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [toast, setToast] = useState("");
+  const [search, setSearch] = useState("");
+  const [jenisFilter, setJenisFilter] = useState("Semua Jenis");
   const [hapusId, setHapusId] = useState<string | null>(null);
 
-  const mapelUser = session?.user?.mapel as unknown;
-  const mapelOptions: string[] = Array.isArray(mapelUser) ? mapelUser : mapelUser ? [String(mapelUser)] : [];
-
-  const load = async () => {
-    setLoading(true);
+  async function load() {
     const res = await fetch("/api/guru/tugas");
-    if (res.ok) setList(await res.json());
+    const d = await res.json();
+    setData(Array.isArray(d) ? d : []);
     setLoading(false);
-  };
+  }
 
-  useEffect(() => {
-    load();
-    fetch("/api/guru/kelas")
-      .then((r) => r.json())
-      .then((d) => setKelas(Array.isArray(d) ? d : []))
-      .catch(() => { });
-  }, []);
+  useEffect(() => { load(); }, []);
 
-  const showToast = (m: string) => {
-    setToast(m);
-    setTimeout(() => setToast(""), 2500);
-  };
-
-  const bukaTambah = () => {
-    setEditId(null);
-    setForm({ ...kosong, mapel: mapelOptions[0] || "" });
-    setError("");
-    setOpen(true);
-  };
-
-  const bukaEdit = (t: Tugas) => {
-    setEditId(t._id);
-    setForm({
-      judul: t.judul,
-      deskripsi: t.deskripsi,
-      jenis: t.jenis,
-      mode: t.mode,
-      mapel: t.mapel,
-      kelasId: typeof t.kelasId === "string" ? t.kelasId : t.kelasId?._id,
-      deadline: toLocalInput(t.deadline),
-    });
-    setError("");
-    setOpen(true);
-  };
-
-  const simpan = async () => {
-    if (!form.judul || !form.mapel || !form.kelasId || !form.deadline) {
-      setError("Judul, mapel, kelas, dan deadline wajib diisi");
-      return;
-    }
-    setSaving(true);
-    const res = await fetch(editId ? `/api/guru/tugas/${editId}` : "/api/guru/tugas", {
-      method: editId ? "PUT" : "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
-    });
-    setSaving(false);
-    if (!res.ok) {
-      setError((await res.json()).error || "Gagal menyimpan");
-      return;
-    }
-    setOpen(false);
-    showToast(editId ? "Tugas berhasil diperbarui" : "Tugas berhasil dibuat");
-    load();
-  };
-
-  const hapus = async () => {
+  async function konfirmasiHapus() {
     if (!hapusId) return;
     await fetch(`/api/guru/tugas/${hapusId}`, { method: "DELETE" });
     setHapusId(null);
-    showToast("Tugas berhasil dihapus");
     load();
-  };
+  }
 
-  const tampil = list.filter((t) => filter === "semua" || t.jenis === filter);
-  const input =
-    "w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white outline-none transition focus:border-cyan-400";
+  const filtered = data.filter((t) => {
+    const cocokCari = t.judul.toLowerCase().includes(search.toLowerCase());
+    const cocokJenis = jenisFilter === "Semua Jenis" || t.jenis === jenisFilter.toLowerCase();
+    return cocokCari && cocokJenis;
+  });
 
   return (
-    <div className="p-6 md:p-8">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold">Tugas & Project</h1>
-          <p className="text-sm opacity-70">Buat tugas dan nilai pengumpulan siswa.</p>
+    <div>
+      <h1 className="animate-fade-in-up text-2xl font-semibold text-white">Tugas & Project</h1>
+      <p className="animate-fade-in-up mt-1 text-muted" style={{ animationDelay: "60ms" }}>
+        Kelola tugas dan project yang diberikan kepada siswa.
+      </p>
+
+      <div className="animate-fade-in-up mt-6 flex flex-wrap items-center justify-between gap-3" style={{ animationDelay: "100ms" }}>
+        <div className="flex flex-wrap gap-3">
+          <div className="relative w-64">
+            <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              type="text"
+              placeholder="Cari tugas..."
+              className="w-full rounded-xl border border-border bg-surface py-2.5 pl-9 pr-4 text-sm text-gray-200 placeholder-gray-500 outline-none focus:border-primary/50"
+            />
+          </div>
+          <div className="relative">
+            <select
+              value={jenisFilter}
+              onChange={(e) => setJenisFilter(e.target.value)}
+              className="appearance-none rounded-xl border border-border bg-surface px-4 py-2.5 pr-9 text-sm text-gray-200 outline-none focus:border-primary/50"
+            >
+              <option>Semua Jenis</option>
+              <option>Tugas</option>
+              <option>Project</option>
+            </select>
+            <ChevronDown size={14} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted" />
+          </div>
         </div>
-        <button
-          onClick={bukaTambah}
-          className="rounded-xl bg-cyan-400 px-5 py-2.5 text-sm font-semibold text-black transition hover:-translate-y-0.5 hover:shadow-lg hover:shadow-cyan-400/30"
+        <Link
+          href="/guru/tugas-project/tambah"
+          className="flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-bg transition-transform hover:scale-105"
         >
-          + Buat Tugas
-        </button>
+          <Plus size={16} /> Buat Tugas
+        </Link>
       </div>
 
-      <div className="mb-5 flex gap-2">
-        {(["semua", "tugas", "project"] as const).map((f) => (
-          <button
-            key={f}
-            onClick={() => setFilter(f)}
-            className={`rounded-full px-4 py-1.5 text-sm capitalize transition ${filter === f ? "bg-cyan-400 font-semibold text-black" : "bg-white/10 hover:bg-white/20"
-              }`}
-          >
-            {f}
-          </button>
-        ))}
-      </div>
-
-      {loading ? (
-        <p className="opacity-70">Memuat...</p>
-      ) : tampil.length === 0 ? (
-        <p className="rounded-2xl border border-white/10 p-10 text-center opacity-70">Belum ada tugas.</p>
-      ) : (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {tampil.map((t) => {
-            const lewat = new Date(t.deadline) < new Date();
-            return (
-              <div
-                key={t._id}
-                className="flex flex-col rounded-2xl border border-white/10 bg-white/5 p-5 transition hover:-translate-y-1 hover:border-cyan-400/50"
-              >
-                <div className="mb-2 flex items-center gap-2 text-xs">
-                  <span className="rounded-full bg-cyan-400/20 px-2.5 py-1 font-semibold capitalize text-cyan-300">
-                    {t.jenis}
-                  </span>
-                  <span className="rounded-full bg-white/10 px-2.5 py-1 capitalize">{t.mode}</span>
-                </div>
-                <h3 className="text-lg font-semibold">{t.judul}</h3>
-                <p className="mt-1 text-sm opacity-70">
-                  {t.mapel} • {typeof t.kelasId === "string" ? "" : `${t.kelasId?.grade} ${t.kelasId?.name}`}
-                </p>
-                <p className={`mt-3 text-sm ${lewat ? "text-red-400" : "opacity-80"}`}>
-                  Deadline: {new Date(t.deadline).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" })}
-                </p>
-                <p className="text-sm opacity-80">{t.jumlahKumpul} siswa mengumpulkan</p>
-                <div className="mt-4 flex gap-2">
-                  <Link
-                    href={`/guru/tugas-project/${t._id}`}
-                    className="flex-1 rounded-lg bg-cyan-400 py-2 text-center text-sm font-semibold text-black transition hover:opacity-90"
-                  >
-                    Lihat & Nilai
-                  </Link>
-                  <button onClick={() => bukaEdit(t)} className="rounded-lg bg-white/10 px-3 text-sm hover:bg-white/20">
-                    Edit
-                  </button>
-                  <button onClick={() => setHapusId(t._id)} className="rounded-lg bg-red-500/20 px-3 text-sm text-red-300 hover:bg-red-500/30">
-                    Hapus
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Modal tambah / edit */}
-      {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="max-h-[90vh] w-full max-w-lg animate-[fadeIn_.2s_ease] overflow-y-auto rounded-2xl border border-white/10 bg-[#111827] p-6 text-white">
-            <h2 className="mb-4 text-xl font-bold">{editId ? "Edit Tugas" : "Buat Tugas"}</h2>
-            <div className="space-y-3">
-              <input className={input} placeholder="Judul" value={form.judul} onChange={(e) => setForm({ ...form, judul: e.target.value })} />
-              <textarea className={input} rows={3} placeholder="Deskripsi / instruksi" value={form.deskripsi} onChange={(e) => setForm({ ...form, deskripsi: e.target.value })} />
-              <div className="grid grid-cols-2 gap-3">
-                <select className={input} value={form.jenis} onChange={(e) => setForm({ ...form, jenis: e.target.value })}>
-                  <option value="tugas">Tugas</option>
-                  <option value="project">Project</option>
-                </select>
-                <select className={input} value={form.mode} onChange={(e) => setForm({ ...form, mode: e.target.value })}>
-                  <option value="individu">Individu</option>
-                  <option value="kelompok">Kelompok</option>
-                </select>
-              </div>
-              {mapelOptions.length > 0 ? (
-                <select className={input} value={form.mapel} onChange={(e) => setForm({ ...form, mapel: e.target.value })}>
-                  {mapelOptions.map((m) => (
-                    <option key={m} value={m}>{m}</option>
-                  ))}
-                </select>
-              ) : (
-                <input className={input} placeholder="Mata pelajaran" value={form.mapel} onChange={(e) => setForm({ ...form, mapel: e.target.value })} />
+      <div className="animate-fade-in-up mt-5 overflow-hidden rounded-2xl border border-border bg-surface" style={{ animationDelay: "140ms" }}>
+        {loading ? (
+          <div className="flex items-center justify-center gap-2 py-16 text-muted">
+            <Loader2 size={18} className="animate-spin" /> Memuat tugas...
+          </div>
+        ) : (
+          <table className="w-full text-left text-sm">
+            <thead>
+              <tr className="border-b border-border text-xs uppercase tracking-wide text-muted">
+                <th className="px-6 py-4 font-medium">Judul</th>
+                <th className="px-6 py-4 font-medium">Mata Pelajaran</th>
+                <th className="px-6 py-4 font-medium">Kelas</th>
+                <th className="px-6 py-4 font-medium">Jenis</th>
+                <th className="px-6 py-4 font-medium">Deadline</th>
+                <th className="px-6 py-4 font-medium">Terkumpul</th>
+                <th className="px-6 py-4 text-right font-medium">Aksi</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((t) => (
+                <tr key={t._id} className="border-b border-border/60 transition-colors last:border-0 hover:bg-white/[0.02]">
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-3">
+                      <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-soft text-primary">
+                        <ClipboardList size={16} />
+                      </span>
+                      <span className="font-medium text-white">{t.judul}</span>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 text-gray-300">{t.mapel}</td>
+                  <td className="px-6 py-4 text-gray-300">{t.kelasId ? `${t.kelasId.grade} ${t.kelasId.name}` : "-"}</td>
+                  <td className="px-6 py-4">
+                    <span className={`rounded-full px-3 py-1 text-xs font-medium uppercase ${jenisBadge[t.jenis] ?? ""}`}>{t.jenis}</span>
+                  </td>
+                  <td className="px-6 py-4 text-gray-300">
+                    {new Date(t.deadline).toLocaleString("id-ID", {
+                      day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Jakarta",
+                    })}
+                  </td>
+                  <td className="px-6 py-4 text-gray-300">{t.jumlahKumpul} siswa</td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center justify-end gap-3 text-gray-400">
+                      <Link href={`/guru/tugas-project/${t._id}`} title="Detail & Penilaian" className="hover:text-gray-200"><Eye size={16} /></Link>
+                      <Link href={`/guru/tugas-project/${t._id}/edit`} title="Edit" className="hover:text-gray-200"><Pencil size={16} /></Link>
+                      <button onClick={() => setHapusId(t._id)} title="Hapus" className="hover:text-red-400"><Trash2 size={16} /></button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {filtered.length === 0 && (
+                <tr>
+                  <td colSpan={7} className="px-6 py-16 text-center text-muted">
+                    Belum ada tugas. Klik "Buat Tugas" untuk membuat.
+                  </td>
+                </tr>
               )}
-              <select className={input} value={form.kelasId} onChange={(e) => setForm({ ...form, kelasId: e.target.value })}>
-                <option value="">Pilih kelas</option>
-                {kelas.map((k) => (
-                  <option key={k.id} value={k.id}>{k.grade} {k.name}</option>
-                ))}
-              </select>
-              <input
-                type="datetime-local"
-                className={`${input} [color-scheme:dark] [&::-webkit-calendar-picker-indicator]:cursor-pointer`}
-                value={form.deadline}
-                onChange={(e) => setForm({ ...form, deadline: e.target.value })}
-              />
-              {error && <p className="text-sm text-red-400">{error}</p>}
-            </div>
-            <div className="mt-5 flex justify-end gap-2">
-              <button onClick={() => setOpen(false)} className="rounded-xl bg-white/10 px-4 py-2 text-sm hover:bg-white/20">Batal</button>
-              <button onClick={simpan} disabled={saving} className="rounded-xl bg-cyan-400 px-5 py-2 text-sm font-semibold text-black disabled:opacity-60">
-                {saving ? "Menyimpan..." : "Simpan"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+            </tbody>
+          </table>
+        )}
+      </div>
 
-      {/* Konfirmasi hapus */}
-      {hapusId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-[#111827] p-6 text-center text-white">
-            <h3 className="text-lg font-bold">Hapus tugas ini?</h3>
-            <p className="mt-1 text-sm opacity-70">Semua pengumpulan siswa ikut terhapus.</p>
-            <div className="mt-5 flex justify-center gap-2">
-              <button onClick={() => setHapusId(null)} className="rounded-xl bg-white/10 px-4 py-2 text-sm">Batal</button>
-              <button onClick={hapus} className="rounded-xl bg-red-500 px-5 py-2 text-sm font-semibold">Hapus</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {toast && (
-        <div className="fixed right-5 top-5 z-[60] animate-[fadeIn_.25s_ease] rounded-xl border border-cyan-400/40 bg-[#111827] px-5 py-3 text-sm text-white shadow-xl">
-          ✓ {toast}
-        </div>
-      )}
+      <ConfirmDeleteModal
+        open={Boolean(hapusId)}
+        onClose={() => setHapusId(null)}
+        onConfirm={konfirmasiHapus}
+        itemLabel="tugas ini"
+      />
     </div>
   );
 }

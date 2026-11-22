@@ -4,19 +4,16 @@ import { authOptions } from "@/lib/authOptions";
 import { connectDB } from "@/lib/mongodb";
 import Tugas from "@/models/Tugas";
 import TugasSubmission from "@/models/TugasSubmission";
-import "@/models/Kelas";
-import { bolehAkses } from "@/lib/aksesGuru";
-import { catatAktivitasGuru } from "@/lib/aktivitasLog";
+import Guru from "@/models/Guru";
+import Kelas from "@/models/Kelas";
+import { simpanFile } from "@/lib/simpanFile";
 
-async function guruOnly() {
-  const session = await getServerSession(authOptions);
-  if (!session || session.user.role !== "guru" || !session.user.id) return null;
-  return session;
-}
+const BATAS = 4.4 * 1024 * 1024;
 
 export async function GET() {
-  const session = await guruOnly();
-  if (!session) return NextResponse.json({ error: "Tidak diizinkan" }, { status: 401 });
+  const session = await getServerSession(authOptions);
+  if (!session || session.user.role !== "guru")
+    return NextResponse.json({ error: "Tidak diizinkan" }, { status: 401 });
   await connectDB();
 
   const list = await Tugas.find({ guruId: session.user.id })
@@ -24,41 +21,59 @@ export async function GET() {
     .sort({ createdAt: -1 })
     .lean();
 
-  const data = await Promise.all(
+  const hasil = await Promise.all(
     list.map(async (t: any) => ({
       ...t,
       jumlahKumpul: await TugasSubmission.countDocuments({ tugasId: t._id }),
     }))
   );
-  return NextResponse.json(data);
+  return NextResponse.json(hasil);
 }
 
 export async function POST(req: Request) {
-  const session = await guruOnly();
-  if (!session) return NextResponse.json({ error: "Tidak diizinkan" }, { status: 401 });
+  const session = await getServerSession(authOptions);
+  if (!session || session.user.role !== "guru")
+    return NextResponse.json({ error: "Tidak diizinkan" }, { status: 401 });
   await connectDB();
 
-  const b = await req.json();
-  if (!b.judul || !b.mapel || !b.kelasId || !b.deadline) {
-    return NextResponse.json({ error: "Judul, mapel, kelas, dan deadline wajib diisi" }, { status: 400 });
-  }
+  const fd = await req.formData();
+  const judul = String(fd.get("judul") || "").trim();
+  const jenis = String(fd.get("jenis") || "tugas");
+  const mapel = String(fd.get("mapel") || "");
+  const kelasId = String(fd.get("kelasId") || "");
+  const deadline = String(fd.get("deadline") || "");
+  const deskripsi = String(fd.get("deskripsi") || "");
 
-  if (!(await bolehAkses(session.user.id!, b.kelasId, b.mapel))) {
-    return NextResponse.json({ error: "Anda tidak mengampu mapel ini di kelas tersebut" }, { status: 403 });
-  }
+  if (!judul || !mapel || !kelasId || !deadline)
+    return NextResponse.json({ error: "Judul, Mapel, Kelas, dan Deadline wajib diisi" }, { status: 400 });
+
+  const guru: any = await Guru.findById(session.user.id).lean();
+  const kelas: any = await Kelas.findById(kelasId).lean();
+  if (!guru || !kelas) return NextResponse.json({ error: "Kelas tidak ditemukan" }, { status: 404 });
+  const wali = kelas.waliKelas === guru.nama;
+  const mengajar = (kelas.mapel ?? []).includes(guru.mapel);
+  if (!wali && !mengajar)
+    return NextResponse.json({ error: "Kamu tidak punya akses ke kelas ini" }, { status: 403 });
+  if (mapel !== guru.mapel)
+    return NextResponse.json({ error: "Mapel harus sesuai mapel yang kamu ajar" }, { status: 403 });
+
+  const files = fd.getAll("files").filter((f): f is File => f instanceof File && f.size > 0);
+  if (files.reduce((a, f) => a + f.size, 0) > BATAS)
+    return NextResponse.json({ error: "Total ukuran file maksimal 4 MB" }, { status: 400 });
+
+  const tersimpan = [];
+  for (const f of files) tersimpan.push(await simpanFile(f, "tugas"));
 
   const tugas = await Tugas.create({
-    judul: b.judul,
-    deskripsi: b.deskripsi || "",
-    jenis: b.jenis || "tugas",
-    mode: b.mode || "individu",
-    mapel: b.mapel,
-    kelasId: b.kelasId,
-    deadline: new Date(b.deadline),
+    judul,
+    deskripsi,
+    jenis,
+    mapel,
+    kelasId,
     guruId: session.user.id,
+    deadline: new Date(deadline),
+    files: tersimpan,
   });
-
-  await catatAktivitasGuru(session.user.id!, "Membuat Tugas", `Membuat ${b.jenis || "tugas"} "${b.judul}" (${b.mapel})`);
 
   return NextResponse.json(tugas, { status: 201 });
 }
