@@ -3,13 +3,13 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { LayoutDashboard, Activity, ClipboardList, School, LogOut } from "lucide-react";
+import { LayoutDashboard, Activity, ClipboardList, School, LogOut, BarChart3, History, BookA, Book, BookDashedIcon, BookImage, BookOpen } from "lucide-react";
 
 const navItems = [
   { label: "Dashboard", href: "/kurikulum/dashboard", icon: LayoutDashboard },
-  { label: "Aktivitas Guru", href: "/kurikulum/aktivitas-guru", icon: Activity },
-  { label: "Rekap Aktivitas", href: "/kurikulum/rekap-aktivitas", icon: ClipboardList },
-  { label: "Mapel & Kelas", href: "/kurikulum/mapel-kelas", icon: School },
+  { label: "Aktivitas Guru", href: "/kurikulum/aktivitas-guru", icon: History },
+  { label: "Rekap Aktivitas", href: "/kurikulum/rekap-aktivitas", icon: BarChart3 },
+  { label: "Mapel & Kelas", href: "/kurikulum/mapel-kelas", icon: BookOpen },
 ];
 
 export default function Sidebar() {
