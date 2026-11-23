@@ -1,13 +1,14 @@
 "use client";
 
 import Modal from "@/components/ui/Modal";
-import { FileUp, ClipboardList, FileCheck2 } from "lucide-react";
+import { FileUp, ClipboardList, FileCheck2, Pencil } from "lucide-react";
 import { getGuruProfile, getRiwayatByGuru, type JenisAktivitas } from "@/lib/dummy-data";
 
 const jenisIconMap: Record<JenisAktivitas, typeof FileUp> = {
   "Upload Materi": FileUp,
   "Membuat Assessment": ClipboardList,
   "Menilai Tugas": FileCheck2,
+    "Mengedit Assessment": Pencil,
 };
 
 export default function DetailAktivitasModal({
