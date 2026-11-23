@@ -1,0 +1,1 @@
+export { default } from "@/app/(kepsek)/kepsek/dashboard/page";
