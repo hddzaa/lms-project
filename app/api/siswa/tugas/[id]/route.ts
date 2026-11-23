@@ -5,6 +5,7 @@ import { connectDB } from "@/lib/mongodb";
 import Tugas from "@/models/Tugas";
 import TugasSubmission from "@/models/TugasSubmission";
 import { simpanFile } from "@/lib/simpanFile";
+import { catatAktivitasSiswa } from "@/lib/aktivitasSiswa";
 
 const BATAS = 4.4 * 1024 * 1024;
 
@@ -78,6 +79,12 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
       ...(tersimpan.length > 0 ? { files: tersimpan } : {}),
     },
     { upsert: true, new: true, setDefaultsOnInsert: true }
+  );
+
+  await catatAktivitasSiswa(
+    session.user.id ?? "",
+    "Mengumpulkan Tugas",
+    "Mengumpulkan " + t.jenis + ' "' + t.judul + '" (' + t.mapel + ")" + (status === "terlambat" ? " - terlambat" : "")
   );
 
   return NextResponse.json(sub);

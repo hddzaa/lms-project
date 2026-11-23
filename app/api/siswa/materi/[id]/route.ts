@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import { connectDB } from "@/lib/mongodb";
 import Materi from "@/models/Materi";
+import { catatAktivitasSiswa } from "@/lib/aktivitasSiswa";
 
 export async function GET(req: Request, context: { params: Promise<{ id: string }> }) {
   const { id } = await context.params;
@@ -17,6 +18,12 @@ export async function GET(req: Request, context: { params: Promise<{ id: string 
   if (materi.kelasId.toString() !== session.user.kelasId) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
+
+  await catatAktivitasSiswa(
+    session.user.id ?? "",
+    "Melihat Materi",
+    'Melihat materi "' + materi.judul + '" (' + materi.mapel + ")"
+  );
 
   return NextResponse.json({
     id: materi._id.toString(),

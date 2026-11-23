@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/authOptions";
 import { connectDB } from "@/lib/mongodb";
 import Assessment from "@/models/Assessment";
 import AssessmentSubmission from "@/models/AssessmentSubmission";
+import { catatAktivitasSiswa } from "@/lib/aktivitasSiswa";
 
 export async function POST(req: Request, context: { params: Promise<{ id: string }> }) {
   const { id } = await context.params;
@@ -40,6 +41,12 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
   submission.nilai = hasEssay ? null : nilai;
   submission.waktuSelesai = new Date();
   await submission.save();
+
+  await catatAktivitasSiswa(
+    session.user.id ?? "",
+    "Mengerjakan Assessment",
+    'Mengerjakan assessment "' + assessment.judul + '" (' + assessment.mapel + ")"
+  );
 
   return NextResponse.json({ status: submission.status, nilai: submission.nilai });
 }
