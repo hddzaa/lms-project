@@ -26,6 +26,11 @@ export async function GET(req: Request, context: { params: Promise<{ id: string 
   }
 
   const isSelesai = submission.status !== "Sedang Dikerjakan";
+  const isKuis = a.jenis === "Kuis";
+
+  if (isSelesai && !isKuis) {
+    return NextResponse.json({ error: "Review tidak tersedia" }, { status: 403 });
+  }
 
   return NextResponse.json({
     id: a._id.toString(),
@@ -37,7 +42,8 @@ export async function GET(req: Request, context: { params: Promise<{ id: string 
     deadline: a.deadline,
     durasiMenit: a.durasiMenit,
     status: submission.status,
-    nilai: submission.nilai,
+    // Nilai hanya untuk Kuis
+    nilai: isKuis ? (submission.nilai ?? null) : null,
     waktuMulai: submission.waktuMulai,
     soal: a.soal.map((s: any) => ({
       id: s._id.toString(),
@@ -46,7 +52,8 @@ export async function GET(req: Request, context: { params: Promise<{ id: string 
       opsi: s.opsi,
       bobot: s.bobot,
       jawabanSaya: submission.jawaban.find((j: any) => j.soalId === s._id.toString())?.jawaban || "",
-      ...(isSelesai ? { kunciJawaban: s.kunciJawaban } : {}),
+      // Kunci jawaban hanya untuk Kuis yang sudah selesai
+      ...(isSelesai && isKuis ? { kunciJawaban: s.kunciJawaban } : {}),
     })),
   });
 }

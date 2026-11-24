@@ -25,7 +25,19 @@ export async function GET(_req: Request, context: { params: Promise<{ id: string
   const t = await ambilTugas(id, session.user.kelasId);
   if (!t) return NextResponse.json({ error: "Tugas tidak ditemukan" }, { status: 404 });
 
-  const submission = await TugasSubmission.findOne({ tugasId: id, siswaId: session.user.id }).lean();
+  const sub: any = await TugasSubmission.findOne({ tugasId: id, siswaId: session.user.id }).lean();
+
+  // Nilai tidak dikirim ke siswa; hanya penanda bahwa tugas sudah dinilai
+  const submission = sub
+    ? {
+        files: sub.files ?? [],
+        catatan: sub.catatan ?? "",
+        status: sub.status,
+        komentar: sub.komentar ?? "",
+        waktuKumpul: sub.waktuKumpul,
+        dinilai: sub.nilai !== null && sub.nilai !== undefined,
+      }
+    : null;
 
   return NextResponse.json({
     tugas: {
@@ -38,7 +50,7 @@ export async function GET(_req: Request, context: { params: Promise<{ id: string
       deadline: t.deadline,
       files: t.files ?? [],
     },
-    submission: submission ?? null,
+    submission,
   });
 }
 
@@ -70,7 +82,7 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
 
   const status = new Date() > new Date(t.deadline) ? "terlambat" : "dikumpulkan";
 
-  const sub = await TugasSubmission.findOneAndUpdate(
+  await TugasSubmission.findOneAndUpdate(
     { tugasId: id, siswaId: session.user.id },
     {
       catatan,
@@ -87,5 +99,5 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
     "Mengumpulkan " + t.jenis + ' "' + t.judul + '" (' + t.mapel + ")" + (status === "terlambat" ? " - terlambat" : "")
   );
 
-  return NextResponse.json(sub);
+  return NextResponse.json({ ok: true, status });
 }

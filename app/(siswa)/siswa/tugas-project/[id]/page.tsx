@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { Loader2, UploadCloud, FileText, X, AlertCircle } from "lucide-react";
+import { Loader2, UploadCloud, FileText, X, AlertCircle, CheckCircle2 } from "lucide-react";
 import LampiranList from "@/components/tugas/LampiranList";
 import Toast from "@/components/ui/Toast";
 
@@ -22,9 +22,9 @@ type Submission = {
   files: FileItem[];
   catatan: string;
   status: string;
-  nilai: number | null;
   komentar: string;
   waktuKumpul: string;
+  dinilai: boolean;
 } | null;
 
 const BATAS_BYTE = 4 * 1024 * 1024;
@@ -94,7 +94,7 @@ export default function SiswaDetailTugasPage() {
   }
   if (!tugas) return <p className="text-muted">Tugas tidak ditemukan.</p>;
 
-  const dinilai = sub !== null && sub.nilai !== null && sub.nilai !== undefined;
+  const dinilai = sub !== null && sub.dinilai;
 
   return (
     <div>
@@ -134,9 +134,15 @@ export default function SiswaDetailTugasPage() {
         <div className="w-full space-y-4 lg:w-96">
           {dinilai && sub && (
             <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-6">
-              <p className="text-xs font-medium tracking-wide text-emerald-300">NILAI</p>
-              <p className="mt-1 text-4xl font-bold text-white">{sub.nilai}</p>
-              {sub.komentar && <p className="mt-3 text-sm text-gray-200">{sub.komentar}</p>}
+              <p className="flex items-center gap-2 text-sm font-semibold text-emerald-300">
+                <CheckCircle2 size={18} /> Sudah dinilai oleh guru
+              </p>
+              {sub.komentar && (
+                <>
+                  <p className="mb-1 mt-4 text-xs font-medium tracking-wide text-emerald-300">KOMENTAR GURU</p>
+                  <p className="text-sm text-gray-200">{sub.komentar}</p>
+                </>
+              )}
             </div>
           )}
 

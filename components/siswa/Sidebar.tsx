@@ -10,7 +10,6 @@ const navItems = [
   { label: "Materi", href: "/siswa/materi", icon: BookOpen },
   { label: "Assessment", href: "/siswa/assessment", icon: FileText },
   { label: "Tugas & Project", href: "/siswa/tugas-project", icon: ClipboardList },
-  { label: "Nilai", href: "/siswa/nilai", icon: GraduationCap },
 ];
 
 export default function Sidebar() {

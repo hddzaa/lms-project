@@ -34,7 +34,8 @@ export async function GET() {
       durasiMenit: a.durasiMenit,
       jumlahSoal: a.soal.length,
       statusKerja,
-      nilai: sub?.nilai ?? null,
+      // Nilai hanya untuk Kuis
+      nilai: a.jenis === "Kuis" ? (sub?.nilai ?? null) : null,
     };
   });
 

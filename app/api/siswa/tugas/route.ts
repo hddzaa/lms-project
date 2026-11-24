@@ -28,6 +28,7 @@ export async function GET() {
     const s: any = subs.find((x: any) => String(x.tugasId) === String(t._id));
     let status = "belum";
     if (s) status = s.nilai !== null && s.nilai !== undefined ? "dinilai" : s.status;
+    // Nilai sengaja tidak dikirim ke siswa
     return {
       id: String(t._id),
       judul: t.judul,
@@ -36,7 +37,6 @@ export async function GET() {
       guruNama: t.guruId?.nama ?? "-",
       deadline: t.deadline,
       status,
-      nilai: s?.nilai ?? null,
     };
   });
 

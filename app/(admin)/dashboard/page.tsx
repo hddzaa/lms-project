@@ -1,145 +1,160 @@
-import { Users, GraduationCap, History, BarChart3, Share2 } from "lucide-react";
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { Users, GraduationCap, School, BookOpen, Activity, MousePointerClick, ArrowUpRight } from "lucide-react";
 
-const menuCards = [
-  {
-    title: "Kelola Kelas & Siswa",
-    desc: "Tambah, ubah, dan kelola data kelas serta siswa.",
-    icon: Users,
-    href: "/kelas-siswa",
-    action: "Kelola",
-    variant: "primary",
-  },
-  {
-    title: "Guru & Mata Pelajaran",
-    desc: "Kelola data guru dan mata pelajaran.",
-    icon: GraduationCap,
-    href: "/guru-mapel",
-    action: "Kelola",
-    variant: "primary",
-  },
-  {
-    title: "Aktivitas Guru",
-    desc: "Lihat aktivitas guru dalam sistem.",
-    icon: History,
-    href: "/aktivitas-guru",
-    action: "Lihat",
-    variant: "secondary",
-  },
-  {
-    title: "Rekap Aktivitas",
-    desc: "Unduh rekap aktivitas guru dan siswa.",
-    icon: BarChart3,
-    href: "/rekap-aktivitas",
-    action: "Buka",
-    variant: "secondary",
-  },
-] as const;
-
-const variantStyles = {
-  primary: {
-    iconBg: "bg-primary-soft",
-    iconColor: "text-primary",
-    link: "text-primary",
-    glow: "hover:shadow-primary/10 hover:border-primary/30",
-  },
-  secondary: {
-    iconBg: "bg-secondary-soft",
-    iconColor: "text-secondary",
-    link: "text-secondary",
-    glow: "hover:shadow-secondary/10 hover:border-secondary/30",
-  },
-  neutral: {
-    iconBg: "bg-white/5",
-    iconColor: "text-gray-300",
-    link: "text-gray-300",
-    glow: "hover:shadow-white/5 hover:border-white/20",
-  },
+type Stats = {
+  siswa: number;
+  guru: number;
+  kelas: number;
+  mapel: number;
+  aktivitasGuru: number;
+  aktivitasSiswa: number;
 };
 
-export default function DashboardPage() {
-  return (
-    <div>
-      <h1 className="animate-fade-in-up text-2xl font-semibold text-white">
-        Dashboard Admin
-      </h1>
-      <p
-        className="animate-fade-in-up mt-1 text-muted"
-        style={{ animationDelay: "80ms" }}
-      >
-        Kelola data utama sistem Learning Management System.
-      </p>
+// Angka yang naik pelan dari 0 ke nilai akhir
+function useCountUp(target: number, durasi = 900): number {
+  const [nilai, setNilai] = useState<number>(0);
 
-      {/* Welcome card */}
-      <div
-        className="animate-fade-in-up group mt-6 flex items-center justify-between overflow-hidden rounded-2xl border border-border bg-surface px-8 py-10 transition-all duration-300 hover:border-primary/20 hover:shadow-xl hover:shadow-primary/5"
-        style={{ animationDelay: "140ms" }}
-      >
-        <div className="max-w-xl">
-          <h2 className="text-xl font-semibold text-white">
-            Selamat Datang, Admin
-          </h2>
-          <p className="mt-3 text-muted">
-            Mulai hari ini dengan memantau performa sistem secara menyeluruh.
-            Kelola data kelas, monitoring aktivitas pengajar, dan pastikan
-            seluruh ekosistem akademik Aetheris berjalan dengan presisi
-            tinggi.
-          </p>
+  useEffect(() => {
+    let frame = 0;
+    const mulai = performance.now();
+    function langkah(sekarang: number) {
+      const t = Math.min((sekarang - mulai) / durasi, 1);
+      const halus = 1 - Math.pow(1 - t, 3);
+      setNilai(Math.round(target * halus));
+      if (t < 1) frame = requestAnimationFrame(langkah);
+    }
+    frame = requestAnimationFrame(langkah);
+    return () => cancelAnimationFrame(frame);
+  }, [target, durasi]);
+
+  return nilai;
+}
+
+function KartuStat({
+  label,
+  nilai,
+  ikon: Ikon,
+  href,
+  keterangan,
+  delay,
+}: {
+  label: string;
+  nilai: number | null;
+  ikon: React.ComponentType<{ size?: number; className?: string }>;
+  href: string;
+  keterangan: string;
+  delay: number;
+}) {
+  const tampil = useCountUp(nilai ?? 0);
+
+  return (
+    <Link
+      href={href}
+      className="animate-fade-in-up group relative overflow-hidden rounded-2xl border border-border bg-surface p-6 transition-all duration-300 hover:-translate-y-1 hover:border-primary/40"
+      style={{ animationDelay: delay + "ms" }}
+    >
+      <div className="pointer-events-none absolute -right-8 -top-8 h-28 w-28 rounded-full bg-primary/10 blur-2xl transition-opacity duration-300 group-hover:opacity-100" />
+
+      <div className="flex items-start justify-between">
+        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary-soft text-primary transition-transform duration-300 group-hover:scale-110">
+          <Ikon size={22} />
         </div>
-        <Share2
-          size={90}
-          strokeWidth={1.2}
-          className="animate-float text-secondary/70 transition-transform duration-500 group-hover:scale-110 group-hover:text-secondary"
+        <ArrowUpRight
+          size={18}
+          className="text-muted transition-all duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-primary"
         />
       </div>
 
-      {/* Menu cards */}
-      <div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        {menuCards.map(({ title, desc, icon: Icon, href, action, variant }, i) => {
-          const style = variantStyles[variant];
-          return (
-            <Link
-              key={title}
-              href={href}
-              className={`animate-fade-in-up group flex flex-col justify-between rounded-2xl border border-border bg-surface p-6 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl ${style.glow}`}
-              style={{ animationDelay: `${200 + i * 80}ms` }}
-            >
-              <div>
-                <div
-                  className={`mb-4 w-fit rounded-full p-3 transition-transform duration-300 group-hover:scale-110 ${style.iconBg}`}
-                >
-                  <Icon size={22} className={style.iconColor} />
-                </div>
-                <h3 className="text-lg font-medium text-white">{title}</h3>
-                <p className="mt-2 text-sm text-muted">{desc}</p>
-              </div>
-              <span
-                className={`mt-6 flex items-center gap-1 text-sm font-medium ${style.link}`}
-              >
-                {action}
-                <span className="transition-transform duration-300 group-hover:translate-x-1">
-                  →
-                </span>
-              </span>
-            </Link>
-          );
-        })}
+      <p className="mt-5 text-4xl font-bold text-white">{nilai === null ? "-" : tampil}</p>
+      <p className="mt-1 text-sm font-medium text-gray-200">{label}</p>
+      <p className="mt-0.5 text-xs text-muted">{keterangan}</p>
+    </Link>
+  );
+}
+
+export default function AdminDashboardPage() {
+  const [stats, setStats] = useState<Stats | null>(null);
+  const [error, setError] = useState<string>("");
+
+  useEffect(() => {
+    fetch("/api/admin/stats")
+      .then(async (r) => {
+        const d = await r.json();
+        if (!r.ok) {
+          setError(d.error || "Gagal memuat statistik.");
+          return;
+        }
+        setStats(d);
+      })
+      .catch(() => setError("Gagal memuat statistik."));
+  }, []);
+
+  return (
+    <div>
+      <h1 className="animate-fade-in-up text-3xl font-bold text-white">Dashboard Admin</h1>
+      <p className="animate-fade-in-up mt-2 text-muted" style={{ animationDelay: "40ms" }}>
+        Ringkasan data sekolah dan aktivitas hari ini.
+      </p>
+
+      {error && <p className="mt-6 text-red-400">{error}</p>}
+
+      <h2 className="mb-3 mt-8 text-xs font-medium tracking-wide text-muted">DATA SEKOLAH</h2>
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <KartuStat
+          label="Siswa"
+          nilai={stats ? stats.siswa : null}
+          ikon={Users}
+          href="/kelas-siswa"
+          keterangan="Total siswa terdaftar"
+          delay={80}
+        />
+        <KartuStat
+          label="Guru"
+          nilai={stats ? stats.guru : null}
+          ikon={GraduationCap}
+          href="/guru-mapel"
+          keterangan="Total guru terdaftar"
+          delay={120}
+        />
+        <KartuStat
+          label="Kelas"
+          nilai={stats ? stats.kelas : null}
+          ikon={School}
+          href="/kelas-siswa"
+          keterangan="Total kelas aktif"
+          delay={160}
+        />
+        <KartuStat
+          label="Mata Pelajaran"
+          nilai={stats ? stats.mapel : null}
+          ikon={BookOpen}
+          href="/guru-mapel"
+          keterangan="Total mata pelajaran"
+          delay={200}
+        />
       </div>
 
-      {/* Footer */}
-      <div className="mt-10 flex items-center justify-between border-t border-border pt-6 text-xs text-muted">
-        <p>© 2024 AETHERIS ACADEMIC MGMT. ALL RIGHTS RESERVED.</p>
-        <div className="flex gap-6">
-          <span className="cursor-pointer transition-colors hover:text-gray-300">
-            SECURITY AUDIT
-          </span>
-          <span className="cursor-pointer transition-colors hover:text-gray-300">
-            SYSTEM STATUS
-          </span>
-          <span className="cursor-pointer transition-colors hover:text-gray-300">
-            LOGS
-          </span>
-        </div>
+      <h2 className="mb-3 mt-8 text-xs font-medium tracking-wide text-muted">AKTIVITAS HARI INI</h2>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <KartuStat
+          label="Aktivitas Guru"
+          nilai={stats ? stats.aktivitasGuru : null}
+          ikon={Activity}
+          href="/aktivitas-guru"
+          keterangan="Upload materi, buat assessment, menilai"
+          delay={240}
+        />
+        <KartuStat
+          label="Aktivitas Siswa"
+          nilai={stats ? stats.aktivitasSiswa : null}
+          ikon={MousePointerClick}
+          href="/rekap-aktivitas"
+          keterangan="Melihat materi, mengerjakan assessment, mengumpulkan tugas"
+          delay={280}
+        />
       </div>
     </div>
   );

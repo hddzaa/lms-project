@@ -80,10 +80,12 @@ export default function SiswaAssessmentPage() {
                 {isSelesai ? (
                   <>
                     <p className="mt-3 flex items-center gap-1.5 text-xs text-emerald-400"><span className="h-1.5 w-1.5 rounded-full bg-emerald-400" /> {a.statusKerja === "Perlu Dinilai" ? "Menunggu penilaian guru" : "Selesai"}</p>
-                    {a.nilai !== null && <p className="mt-1 text-sm">Nilai Akhir <span className="font-bold text-secondary">{a.nilai}/100</span></p>}
-                    <Link href={`/siswa/assessment/${a.id}/kerjakan`} className="mt-4 block rounded-xl border border-border py-2.5 text-center text-sm font-medium text-gray-300 hover:bg-white/5">
-                      Lihat Review
-                    </Link>
+                    {a.jenis === "Kuis" && a.nilai !== null && <p className="mt-1 text-sm">Nilai Akhir <span className="font-bold text-secondary">{a.nilai}/100</span></p>}
+                    {a.jenis === "Kuis" && (
+                      <Link href={`/siswa/assessment/${a.id}/kerjakan`} className="mt-4 block rounded-xl border border-border py-2.5 text-center text-sm font-medium text-gray-300 hover:bg-white/5">
+                        Lihat Review
+                      </Link>
+                    )}
                   </>
                 ) : (
                   <>

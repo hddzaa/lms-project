@@ -48,5 +48,7 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
     'Mengerjakan assessment "' + assessment.judul + '" (' + assessment.mapel + ")"
   );
 
-  return NextResponse.json({ status: submission.status, nilai: submission.nilai });
+  // Nilai hanya ditampilkan ke siswa untuk jenis Kuis
+  const boleh = assessment.jenis === "Kuis";
+  return NextResponse.json({ status: submission.status, nilai: boleh ? submission.nilai : null });
 }
