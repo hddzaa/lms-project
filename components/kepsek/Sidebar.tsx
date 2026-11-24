@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { LayoutDashboard, History, BarChart3, GraduationCap } from "lucide-react";
+import { LayoutDashboard, History, BarChart3, GraduationCap, LogOut } from "lucide-react";
 
 const menu = [
   { label: "Dashboard", href: "/kepsek/dashboard", icon: LayoutDashboard },
@@ -29,9 +29,8 @@ export default function KepsekSidebar() {
             <Link
               key={href}
               href={href}
-              className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm transition-all duration-200 ${
-                aktif ? "bg-primary-soft font-medium text-primary" : "text-gray-300 hover:translate-x-1 hover:bg-white/5"
-              }`}
+              className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm transition-all duration-200 ${aktif ? "bg-primary-soft font-medium text-primary" : "text-gray-300 hover:translate-x-1 hover:bg-white/5"
+                }`}
             >
               <Icon size={18} className="transition-transform duration-200" />
               {label}
@@ -42,8 +41,8 @@ export default function KepsekSidebar() {
 
       <button
         onClick={() => signOut({ callbackUrl: "/login" })}
-        className="px-4 py-3 text-left text-sm font-medium text-orange-400 transition-colors hover:text-orange-300"
-      >
+        className="group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-orange-400 hover:bg-white/5">
+        <LogOut size={18} />
         LOGOUT
       </button>
     </aside>
