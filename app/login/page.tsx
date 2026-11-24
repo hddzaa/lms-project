@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Sparkles, Eye, EyeOff, Lock, AtSign, ChevronDown } from "lucide-react";
 import { signIn } from "next-auth/react";
@@ -25,17 +25,47 @@ export default function LoginPage() {
     const router = useRouter();
     const [role, setRole] = useState<Role>("siswa");
     const [showPetugasMenu, setShowPetugasMenu] = useState(false);
+    const [menuPinned, setMenuPinned] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [id, setId] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
+    const petugasRef = useRef<HTMLDivElement>(null);
 
     const isPetugasActive = ["admin", "kepsek", "kurikulum"].includes(role);
+
+    // Tutup menu saat klik di luar area Petugas
+    useEffect(() => {
+        function onClickOutside(e: MouseEvent | TouchEvent) {
+            if (petugasRef.current && !petugasRef.current.contains(e.target as Node)) {
+                setShowPetugasMenu(false);
+                setMenuPinned(false);
+            }
+        }
+        document.addEventListener("mousedown", onClickOutside);
+        document.addEventListener("touchstart", onClickOutside);
+        return () => {
+            document.removeEventListener("mousedown", onClickOutside);
+            document.removeEventListener("touchstart", onClickOutside);
+        };
+    }, []);
+
+    function onPetugasClick() {
+        if (!showPetugasMenu) {
+            setShowPetugasMenu(true);
+            setMenuPinned(true);
+        } else if (!menuPinned) {
+            // Terbuka karena hover: klik mengunci menu agar tetap terbuka
+            setMenuPinned(true);
+        } else {
+            setShowPetugasMenu(false);
+            setMenuPinned(false);
+        }
+    }
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
         setError("");
-
 
         const result = await signIn("credentials", {
             role,
@@ -82,14 +112,14 @@ export default function LoginPage() {
                         </RoleButton>
 
                         <div
+                            ref={petugasRef}
                             className="relative"
                             onMouseEnter={() => setShowPetugasMenu(true)}
-                            onMouseLeave={() => setShowPetugasMenu(false)}
+                            onMouseLeave={() => {
+                                if (!menuPinned) setShowPetugasMenu(false);
+                            }}
                         >
-                            <RoleButton
-                                active={isPetugasActive}
-                                onClick={() => setShowPetugasMenu((v) => !v)}
-                            >
+                            <RoleButton active={isPetugasActive} onClick={onPetugasClick}>
                                 PETUGAS
                                 <ChevronDown
                                     size={13}
@@ -97,24 +127,33 @@ export default function LoginPage() {
                                 />
                             </RoleButton>
 
-                            {showPetugasMenu && (
-                                <div className="animate-fade-in-down absolute left-0 top-full z-10 mt-1 w-40 overflow-hidden rounded-xl border border-border bg-[#171a21] shadow-xl">
-                                    {petugasRoles.map((p) => (
+                            {/* pt-2 menjaga area hover tetap menyambung antara tombol dan menu */}
+                            <div
+                                className={`absolute left-0 top-full z-10 pt-2 transition-all duration-200 ${showPetugasMenu
+                                    ? "translate-y-0 scale-100 opacity-100"
+                                    : "pointer-events-none -translate-y-1 scale-95 opacity-0"
+                                    }`}
+                                style={{ transformOrigin: "top left" }}
+                            >
+                                <div className="w-40 overflow-hidden rounded-xl border border-border bg-[#171a21] shadow-xl">
+                                    {petugasRoles.map((p, i) => (
                                         <button
                                             key={p.value}
                                             type="button"
                                             onClick={() => {
                                                 setRole(p.value);
                                                 setShowPetugasMenu(false);
+                                                setMenuPinned(false);
                                             }}
-                                            className={`block w-full px-4 py-2.5 text-left text-sm transition-colors hover:bg-white/5 ${role === p.value ? "text-primary" : "text-gray-300"
-                                                }`}
+                                            style={{ transitionDelay: showPetugasMenu ? `${i * 40}ms` : "0ms" }}
+                                            className={`block w-full px-4 py-2.5 text-left text-sm transition-all duration-200 hover:bg-white/5 ${showPetugasMenu ? "translate-x-0 opacity-100" : "-translate-x-2 opacity-0"
+                                                } ${role === p.value ? "text-primary" : "text-gray-300"}`}
                                         >
                                             {p.label}
                                         </button>
                                     ))}
                                 </div>
-                            )}
+                            </div>
                         </div>
                     </div>
 

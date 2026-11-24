@@ -32,7 +32,7 @@ const menuCards = [
     icon: BarChart3,
     href: "/rekap-aktivitas",
     action: "Buka",
-    variant: "neutral",
+    variant: "secondary",
   },
 ] as const;
 

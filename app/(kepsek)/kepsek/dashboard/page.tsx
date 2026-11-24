@@ -25,7 +25,7 @@ export default function DashboardKepsekPage() {
     { label: "Total Siswa", value: stats?.siswa, icon: Users, tone: "bg-primary-soft text-primary" },
     { label: "Total Guru", value: stats?.guru, icon: GraduationCap, tone: "bg-secondary-soft text-secondary" },
     { label: "Total Kelas", value: stats?.kelas, icon: School, tone: "bg-primary-soft text-primary" },
-    { label: "Mata Pelajaran", value: stats?.mapel, icon: BookOpen, tone: "bg-white/5 text-gray-300" },
+    { label: "Mata Pelajaran", value: stats?.mapel, icon: BookOpen, tone: "bg-secondary-soft text-secondary" },
   ];
 
   return (

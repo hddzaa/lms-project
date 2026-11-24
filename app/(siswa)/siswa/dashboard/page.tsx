@@ -9,7 +9,7 @@ const menuCards = [
   { title: "Materi", desc: "Lihat materi pembelajaran dari guru Anda.", icon: BookOpen, href: "/siswa/materi", action: "Lihat", variant: "primary" },
   { title: "Assessment", desc: "Kerjakan kuis, ujian, dan penilaian.", icon: FileText, href: "/siswa/assessment", action: "Kerjakan", variant: "secondary" },
   { title: "Tugas & Project", desc: "Kumpulkan tugas dan lihat status pengumpulan.", icon: ClipboardList, href: "/siswa/tugas-project", action: "Lihat", variant: "secondary" },
-  { title: "Nilai", desc: "Lihat rekap nilai Anda.", icon: GraduationCap, href: "/siswa/nilai", action: "Lihat", variant: "neutral" },
+  { title: "Nilai", desc: "Lihat rekap nilai Anda.", icon: GraduationCap, href: "/siswa/nilai", action: "Lihat", variant: "primary" },
 ] as const;
 
 const variantStyles = {
