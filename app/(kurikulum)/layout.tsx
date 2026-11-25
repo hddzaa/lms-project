@@ -2,7 +2,6 @@ import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/authOptions";
 import Sidebar from "@/components/kurikulum/Sidebar";
-import Topbar from "@/components/admin/Topbar";
 import ResponsiveShell from "@/components/ui/ResponsiveShell";
 
 export default async function KurikulumLayout({ children }: { children: React.ReactNode }) {
@@ -10,7 +9,7 @@ export default async function KurikulumLayout({ children }: { children: React.Re
   if (!session || session.user.role !== "kurikulum") redirect("/login");
 
   return (
-    <ResponsiveShell sidebar={<Sidebar />} topbar={<Topbar />}>
+    <ResponsiveShell sidebar={<Sidebar />}>
       {children}
     </ResponsiveShell>
   );

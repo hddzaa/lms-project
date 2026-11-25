@@ -3,9 +3,10 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
-  Search, Filter, Download, Plus, Users, Pencil, Trash2, ChevronLeft, ChevronRight, Loader2,
+  Search, Download, Plus, Users, Pencil, Trash2, ChevronLeft, ChevronRight, Loader2,
 } from "lucide-react";
 import { initials } from "@/lib/dummy-data";
+import { JURUSAN, namaJurusan } from "@/lib/jurusan";
 import ConfirmDeleteModal from "@/components/ui/ConfirmDeleteModal";
 import Toast from "@/components/ui/Toast";
 
@@ -26,6 +27,15 @@ const gradeStyle: Record<string, string> = {
   XII: "bg-white/10 text-gray-300",
 };
 
+// Ambil jurusan dari data kelas. Kelas lama yang category-nya masih "Umum"
+// dibaca dari nama kelasnya (misal "PPLG 1" -> PPLG).
+function getJurusan(k: Kelas) {
+  const kode =
+    JURUSAN.find((j) => j.kode === k.category)?.kode ??
+    JURUSAN.find((j) => k.name.toUpperCase().split(" ").includes(j.kode))?.kode;
+  return kode ? { kode, nama: namaJurusan(kode) } : null;
+}
+
 export default function KelasSiswaPage() {
   const [kelas, setKelas] = useState<Kelas[]>([]);
   const [loading, setLoading] = useState(true);
@@ -45,9 +55,12 @@ export default function KelasSiswaPage() {
     fetchKelas();
   }, []);
 
-  const filtered = kelas.filter((k) =>
-    `${k.grade} ${k.name}`.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = kelas.filter((k) => {
+    const j = getJurusan(k);
+    return `${k.grade} ${k.name} ${j?.kode ?? ""} ${j?.nama ?? ""}`
+      .toLowerCase()
+      .includes(search.toLowerCase());
+  });
 
   async function handleConfirmDelete() {
     if (!deleteTarget) return;
@@ -89,9 +102,6 @@ export default function KelasSiswaPage() {
         </div>
         <div className="flex gap-3">
           <button className="flex items-center gap-2 rounded-xl border border-border bg-surface px-4 py-2.5 text-sm text-gray-300 transition-colors hover:bg-white/5">
-            <Filter size={15} /> Filter
-          </button>
-          <button className="flex items-center gap-2 rounded-xl border border-border bg-surface px-4 py-2.5 text-sm text-gray-300 transition-colors hover:bg-white/5">
             <Download size={15} /> Export
           </button>
         </div>
@@ -103,11 +113,12 @@ export default function KelasSiswaPage() {
             <Loader2 size={18} className="animate-spin" /> Memuat data kelas...
           </div>
         ) : (
-          <table className="w-full text-left text-sm">
+          <table className="w-full whitespace-nowrap text-left text-sm">
             <thead>
               <tr className="border-b border-border text-xs uppercase tracking-wide text-muted">
                 <th className="px-6 py-4 font-medium">No</th>
-                <th className="px-6 py-4 font-medium">Nama Kelas</th>
+                <th className="px-6 py-4 font-medium">Kelas</th>
+                <th className="px-6 py-4 font-medium">Jurusan</th>
                 <th className="px-6 py-4 font-medium">Wali Kelas</th>
                 <th className="px-6 py-4 font-medium">Jumlah Siswa</th>
                 <th className="px-6 py-4 font-medium">Tahun Ajaran</th>
@@ -115,52 +126,62 @@ export default function KelasSiswaPage() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((k, i) => (
-                <tr key={k.id} className="border-b border-border/60 transition-colors last:border-0 hover:bg-white/[0.02]">
-                  <td className="px-6 py-4 text-muted">{String(i + 1).padStart(2, "0")}</td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <span className={`flex h-9 w-9 items-center justify-center rounded-lg text-sm font-semibold ${gradeStyle[k.grade]}`}>
-                        {k.grade}
-                      </span>
-                      <div>
+              {filtered.map((k, i) => {
+                const jurusan = getJurusan(k);
+                return (
+                  <tr key={k.id} className="border-b border-border/60 transition-colors last:border-0 hover:bg-white/[0.02]">
+                    <td className="px-6 py-4 text-muted">{String(i + 1).padStart(2, "0")}</td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <span className={`flex h-9 w-9 items-center justify-center rounded-lg text-sm font-semibold ${gradeStyle[k.grade]}`}>
+                          {k.grade}
+                        </span>
                         <p className="font-medium text-white">{k.name}</p>
-                        <p className="text-xs text-muted">{k.category}</p>
                       </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2.5">
-                      <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-primary to-secondary text-xs font-semibold text-bg">
-                        {initials(k.waliKelas)}
+                    </td>
+                    <td className="px-6 py-4">
+                      {jurusan ? (
+                        <div>
+                          <p className="font-medium text-white">{jurusan.kode}</p>
+                          <p className="max-w-[260px] whitespace-normal text-xs text-muted">{jurusan.nama}</p>
+                        </div>
+                      ) : (
+                        <span className="text-muted">-</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2.5">
+                        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-primary to-secondary text-xs font-semibold text-bg">
+                          {initials(k.waliKelas)}
+                        </span>
+                        <span className="text-gray-300">{k.waliKelas}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="rounded-full bg-primary-soft px-3 py-1 text-xs font-medium text-primary">
+                        {k.jumlahSiswa} Siswa
                       </span>
-                      <span className="text-gray-300">{k.waliKelas}</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="rounded-full bg-primary-soft px-3 py-1 text-xs font-medium text-primary">
-                      {k.jumlahSiswa} Siswa
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-gray-300">{k.tahunAjaran}</td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center justify-end gap-3">
-                      <Link href={`/kelas-siswa/${k.id}/siswa`} title="Kelola Siswa" className="text-primary transition-transform hover:scale-110">
-                        <Users size={17} />
-                      </Link>
-                      <Link href={`/kelas-siswa/${k.id}/edit`} title="Edit Kelas" className="text-gray-400 transition-transform hover:scale-110 hover:text-gray-200">
-                        <Pencil size={16} />
-                      </Link>
-                      <button title="Hapus Kelas" onClick={() => setDeleteTarget(k)} className="text-red-400 transition-transform hover:scale-110 hover:text-red-300">
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                    <td className="px-6 py-4 text-gray-300">{k.tahunAjaran}</td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center justify-end gap-3">
+                        <Link href={`/kelas-siswa/${k.id}/siswa`} title="Kelola Siswa" className="text-primary transition-transform hover:scale-110">
+                          <Users size={17} />
+                        </Link>
+                        <Link href={`/kelas-siswa/${k.id}/edit`} title="Edit Kelas" className="text-gray-400 transition-transform hover:scale-110 hover:text-gray-200">
+                          <Pencil size={16} />
+                        </Link>
+                        <button title="Hapus Kelas" onClick={() => setDeleteTarget(k)} className="text-red-400 transition-transform hover:scale-110 hover:text-red-300">
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-6 py-10 text-center text-muted">
+                  <td colSpan={7} className="px-6 py-10 text-center text-muted">
                     Belum ada kelas. Klik "Tambah Kelas" untuk menambahkan.
                   </td>
                 </tr>

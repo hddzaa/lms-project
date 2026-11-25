@@ -6,12 +6,10 @@ import { Menu } from "lucide-react";
 
 export default function ResponsiveShell({
     sidebar,
-    topbar,
     children,
     bg = "bg-bg",
 }: {
     sidebar: React.ReactNode;
-    topbar: React.ReactNode;
     children: React.ReactNode;
     bg?: string;
 }) {
@@ -91,7 +89,6 @@ export default function ResponsiveShell({
                     <span className="text-lg font-bold text-heading">BiarPinter</span>
                 </div>
 
-                {topbar}
                 <main className="flex-1 overflow-y-auto px-4 py-6 lg:px-8 lg:py-8">{children}</main>
             </div>
         </div>

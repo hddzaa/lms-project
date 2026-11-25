@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Search, Filter, Plus, Pencil, Trash2, ChevronLeft, ChevronRight, User, FileText, Loader2 } from "lucide-react";
+import { Search, Plus, Pencil, Trash2, ChevronLeft, ChevronRight, User, FileText, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { initials, getBadgeColor, getAvatarColor } from "@/lib/dummy-data";
 import MapelModal from "@/components/guru-mapel(admin)/MapelModal";
@@ -100,17 +100,15 @@ export default function GuruMapelPage() {
       >
         <button
           onClick={() => { setTab("guru"); setSearch(""); }}
-          className={`flex items-center gap-2 rounded-xl px-5 py-2 text-sm font-medium transition-colors ${
-            tab === "guru" ? "bg-primary-soft text-primary" : "text-gray-400 hover:text-gray-200"
-          }`}
+          className={`flex items-center gap-2 rounded-xl px-5 py-2 text-sm font-medium transition-colors ${tab === "guru" ? "bg-primary-soft text-primary" : "text-gray-400 hover:text-gray-200"
+            }`}
         >
           <User size={15} /> Guru
         </button>
         <button
           onClick={() => { setTab("mapel"); setSearch(""); }}
-          className={`flex items-center gap-2 rounded-xl px-5 py-2 text-sm font-medium transition-colors ${
-            tab === "mapel" ? "bg-primary-soft text-primary" : "text-gray-400 hover:text-gray-200"
-          }`}
+          className={`flex items-center gap-2 rounded-xl px-5 py-2 text-sm font-medium transition-colors ${tab === "mapel" ? "bg-primary-soft text-primary" : "text-gray-400 hover:text-gray-200"
+            }`}
         >
           <FileText size={15} /> Mata Pelajaran
         </button>
@@ -128,9 +126,6 @@ export default function GuruMapelPage() {
           />
         </div>
         <div className="flex gap-3">
-          <button className="flex items-center gap-2 rounded-xl border border-border bg-surface px-4 py-2.5 text-sm text-gray-300 transition-colors hover:bg-white/5">
-            <Filter size={15} /> Filter
-          </button>
           {tab === "guru" ? (
             <Link
               href="/guru-mapel/tambah"
@@ -280,8 +275,8 @@ export default function GuruMapelPage() {
           deleteTarget?.kind === "guru"
             ? `guru ${deleteTarget.data.nama}`
             : deleteTarget?.kind === "mapel"
-            ? `mata pelajaran ${deleteTarget.data.nama}`
-            : "data ini"
+              ? `mata pelajaran ${deleteTarget.data.nama}`
+              : "data ini"
         }
       />
 

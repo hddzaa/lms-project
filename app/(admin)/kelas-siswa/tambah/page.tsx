@@ -7,11 +7,18 @@ import { ChevronDown, AlertCircle } from "lucide-react";
 import SuccessModal from "@/components/ui/SuccessModal";
 import { JURUSAN } from "@/lib/jurusan";
 
-type FormErrors = { nama?: string; jurusan?: string; wali?: string; tahunAjaran?: string };
+type FormErrors = { kelas?: string; jurusan?: string; wali?: string; tahunAjaran?: string };
+
+// Di form pakai angka biasa, di database dan tampilan utama pakai angka romawi
+const KELAS_OPTIONS = [
+  { angka: "10", romawi: "X" },
+  { angka: "11", romawi: "XI" },
+  { angka: "12", romawi: "XII" },
+] as const;
 
 export default function TambahKelasPage() {
   const router = useRouter();
-  const [nama, setNama] = useState("");
+  const [kelas, setKelas] = useState("");
   const [jurusan, setJurusan] = useState("");
   const [wali, setWali] = useState("");
   const [tahunAjaran, setTahunAjaran] = useState("2023/2024");
@@ -28,7 +35,7 @@ export default function TambahKelasPage() {
 
   function validate(): FormErrors {
     const newErrors: FormErrors = {};
-    if (!nama.trim()) newErrors.nama = "Nama kelas wajib diisi";
+    if (!kelas) newErrors.kelas = "Kelas wajib dipilih";
     if (!jurusan) newErrors.jurusan = "Jurusan wajib dipilih";
     if (!wali) newErrors.wali = "Wali kelas wajib dipilih";
     if (!tahunAjaran.trim()) newErrors.tahunAjaran = "Tahun ajaran wajib diisi";
@@ -41,17 +48,26 @@ export default function TambahKelasPage() {
     setErrors(newErrors);
     if (Object.keys(newErrors).length > 0) return;
 
-    const parts = nama.trim().split(" ");
-    const grade = parts[0].toUpperCase();
-    const rest = parts.slice(1).join(" ") || nama;
+    const grade = KELAS_OPTIONS.find((k) => k.angka === kelas)!.romawi;
 
     setSubmitting(true);
+
+    // Nama kelas dibuat otomatis: kode jurusan + nomor urut (PPLG 1, PPLG 2, ...)
+    const res = await fetch("/api/kelas");
+    const semua: { grade: string; name: string }[] = await res.json();
+    const prefix = `${jurusan} `;
+    const nomorTerpakai = semua
+      .filter((k) => k.grade === grade && k.name.startsWith(prefix))
+      .map((k) => parseInt(k.name.slice(prefix.length), 10))
+      .filter((n) => !isNaN(n));
+    const nomor = nomorTerpakai.length > 0 ? Math.max(...nomorTerpakai) + 1 : 1;
+
     await fetch("/api/kelas", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        grade: ["X", "XI", "XII"].includes(grade) ? grade : "X",
-        name: rest,
+        grade,
+        name: `${jurusan} ${nomor}`,
         category: jurusan,
         waliKelas: wali,
         kapasitas: 36,
@@ -81,18 +97,23 @@ export default function TambahKelasPage() {
         className="animate-fade-in-up mt-6 max-w-2xl rounded-2xl border border-border bg-surface p-8"
         style={{ animationDelay: "120ms" }}
       >
-        <label className="mb-2 block text-xs font-medium tracking-wide text-muted">NAMA KELAS</label>
-        <input
-          value={nama}
-          onChange={(e) => { setNama(e.target.value); if (errors.nama) setErrors((p) => ({ ...p, nama: undefined })); }}
-          type="text"
-          placeholder="Contoh: XII PPLG 1"
-          className={`mb-1.5 w-full rounded-xl border bg-black/30 px-4 py-3 text-sm text-gray-200 placeholder-gray-500 outline-none ${errors.nama ? "border-red-500/60" : "border-border focus:border-primary/50"}`}
-        />
-        {errors.nama && <p className="mb-4 flex items-center gap-1.5 text-xs text-red-400"><AlertCircle size={13} /> {errors.nama}</p>}
-        {!errors.nama && <div className="mb-6" />}
+        <label className="mb-2 block text-xs font-medium tracking-wide text-muted">KELAS</label>
+        <div className="relative">
+          <select
+            value={kelas}
+            onChange={(e) => { setKelas(e.target.value); if (errors.kelas) setErrors((p) => ({ ...p, kelas: undefined })); }}
+            className={`w-full appearance-none rounded-xl border bg-black/30 px-4 py-3 text-sm text-gray-200 outline-none ${errors.kelas ? "border-red-500/60" : "border-border focus:border-primary/50"}`}
+          >
+            <option value="" disabled>Pilih Kelas</option>
+            {KELAS_OPTIONS.map((k) => (
+              <option key={k.angka} value={k.angka}>{k.angka}</option>
+            ))}
+          </select>
+          <ChevronDown size={16} className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-muted" />
+        </div>
+        {errors.kelas && <p className="mt-1.5 flex items-center gap-1.5 text-xs text-red-400"><AlertCircle size={13} /> {errors.kelas}</p>}
 
-        <label className="mb-2 block text-xs font-medium tracking-wide text-muted">JURUSAN</label>
+        <label className="mb-2 mt-6 block text-xs font-medium tracking-wide text-muted">JURUSAN</label>
         <div className="relative">
           <select
             value={jurusan}

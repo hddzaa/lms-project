@@ -116,3 +116,17 @@ html {
 .drawer-open nav > *:nth-child(7) { animation-delay: 440ms; }
 .drawer-open nav > *:nth-child(8) { animation-delay: 490ms; }
 .drawer-open aside > button { animation-delay: 540ms; }
+
+/* Dropdown (select) mengikuti tema gelap */
+select {
+  color-scheme: dark;
+}
+
+select option {
+  background-color: var(--color-surface);
+  color: #e5e7eb;
+}
+
+select option:disabled {
+  color: var(--color-muted);
+}
