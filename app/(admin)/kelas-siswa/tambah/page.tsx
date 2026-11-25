@@ -5,12 +5,14 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ChevronDown, AlertCircle } from "lucide-react";
 import SuccessModal from "@/components/ui/SuccessModal";
+import { JURUSAN } from "@/lib/jurusan";
 
-type FormErrors = { nama?: string; wali?: string; tahunAjaran?: string };
+type FormErrors = { nama?: string; jurusan?: string; wali?: string; tahunAjaran?: string };
 
 export default function TambahKelasPage() {
   const router = useRouter();
   const [nama, setNama] = useState("");
+  const [jurusan, setJurusan] = useState("");
   const [wali, setWali] = useState("");
   const [tahunAjaran, setTahunAjaran] = useState("2023/2024");
   const [errors, setErrors] = useState<FormErrors>({});
@@ -24,15 +26,10 @@ export default function TambahKelasPage() {
       .then((data) => setWaliKelasOptions(data.map((g: any) => g.nama)));
   }, []);
 
-  useEffect(() => {
-    fetch("/api/guru")
-      .then((res) => res.json())
-      .then((data) => setWaliKelasOptions(data.map((g: any) => g.nama)));
-  }, []);
-
   function validate(): FormErrors {
     const newErrors: FormErrors = {};
     if (!nama.trim()) newErrors.nama = "Nama kelas wajib diisi";
+    if (!jurusan) newErrors.jurusan = "Jurusan wajib dipilih";
     if (!wali) newErrors.wali = "Wali kelas wajib dipilih";
     if (!tahunAjaran.trim()) newErrors.tahunAjaran = "Tahun ajaran wajib diisi";
     return newErrors;
@@ -55,7 +52,7 @@ export default function TambahKelasPage() {
       body: JSON.stringify({
         grade: ["X", "XI", "XII"].includes(grade) ? grade : "X",
         name: rest,
-        category: "Umum",
+        category: jurusan,
         waliKelas: wali,
         kapasitas: 36,
         tahunAjaran,
@@ -89,13 +86,29 @@ export default function TambahKelasPage() {
           value={nama}
           onChange={(e) => { setNama(e.target.value); if (errors.nama) setErrors((p) => ({ ...p, nama: undefined })); }}
           type="text"
-          placeholder="Contoh: XII IPA 1"
+          placeholder="Contoh: XII PPLG 1"
           className={`mb-1.5 w-full rounded-xl border bg-black/30 px-4 py-3 text-sm text-gray-200 placeholder-gray-500 outline-none ${errors.nama ? "border-red-500/60" : "border-border focus:border-primary/50"}`}
         />
         {errors.nama && <p className="mb-4 flex items-center gap-1.5 text-xs text-red-400"><AlertCircle size={13} /> {errors.nama}</p>}
         {!errors.nama && <div className="mb-6" />}
 
-        <label className="mb-2 block text-xs font-medium tracking-wide text-muted">WALI KELAS</label>
+        <label className="mb-2 block text-xs font-medium tracking-wide text-muted">JURUSAN</label>
+        <div className="relative">
+          <select
+            value={jurusan}
+            onChange={(e) => { setJurusan(e.target.value); if (errors.jurusan) setErrors((p) => ({ ...p, jurusan: undefined })); }}
+            className={`w-full appearance-none rounded-xl border bg-black/30 px-4 py-3 text-sm text-gray-200 outline-none ${errors.jurusan ? "border-red-500/60" : "border-border focus:border-primary/50"}`}
+          >
+            <option value="" disabled>Pilih Jurusan</option>
+            {JURUSAN.map((j) => (
+              <option key={j.kode} value={j.kode}>{j.kode} - {j.nama}</option>
+            ))}
+          </select>
+          <ChevronDown size={16} className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-muted" />
+        </div>
+        {errors.jurusan && <p className="mt-1.5 flex items-center gap-1.5 text-xs text-red-400"><AlertCircle size={13} /> {errors.jurusan}</p>}
+
+        <label className="mb-2 mt-6 block text-xs font-medium tracking-wide text-muted">WALI KELAS</label>
         <div className="relative">
           <select
             value={wali}
