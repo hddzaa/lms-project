@@ -266,8 +266,8 @@ export default function LandingPage() {
               </div>
             </div>
             <div className="mt-10 flex flex-col justify-between gap-2 border-t border-white/5 pt-6 text-xs text-muted sm:flex-row">
-              <p>© 2024 Aetheris Academic. Seluruh hak cipta dilindungi undang-undang.</p>
-              <p>DIRANCANG OLEH AETHERIS LABS</p>
+              <p>© 2026 BiarPinter Academic. Seluruh hak cipta dilindungi undang-undang.</p>
+              <p>DIRANCANG OLEH MasZa.co</p>
             </div>
           </div>
         </Reveal>

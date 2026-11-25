@@ -225,7 +225,7 @@ export default function LoginPage() {
                 className="animate-fade-in-up mt-10 flex w-full max-w-md justify-between text-xs text-muted"
                 style={{ animationDelay: "150ms" }}
             >
-                <span>© 2024 Aetheris Technologies</span>
+                <span>© 2026 BiarPinter Academic</span>
                 <span className="flex gap-4">
                     <a href="#" className="hover:text-gray-300">Protokol Privasi</a>
                     <a href="#" className="hover:text-gray-300">Status Sistem</a>
