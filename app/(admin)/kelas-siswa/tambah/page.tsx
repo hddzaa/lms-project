@@ -3,11 +3,12 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ChevronDown, AlertCircle } from "lucide-react";
+import { ChevronDown, AlertCircle, Check } from "lucide-react";
 import SuccessModal from "@/components/ui/SuccessModal";
 import { JURUSAN } from "@/lib/jurusan";
 
 type FormErrors = { kelas?: string; jurusan?: string; wali?: string; tahunAjaran?: string };
+type MapelItem = { nama: string; guruPengampu: string };
 
 // Di form pakai angka biasa, di database dan tampilan utama pakai angka romawi
 const KELAS_OPTIONS = [
@@ -22,16 +23,33 @@ export default function TambahKelasPage() {
   const [jurusan, setJurusan] = useState("");
   const [wali, setWali] = useState("");
   const [tahunAjaran, setTahunAjaran] = useState("2023/2024");
+  const [mapelDipilih, setMapelDipilih] = useState<string[]>([]);
   const [errors, setErrors] = useState<FormErrors>({});
   const [showSuccess, setShowSuccess] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [waliKelasOptions, setWaliKelasOptions] = useState<string[]>([]);
+  const [mapelOptions, setMapelOptions] = useState<MapelItem[]>([]);
 
   useEffect(() => {
     fetch("/api/guru")
       .then((res) => res.json())
       .then((data) => setWaliKelasOptions(data.map((g: any) => g.nama)));
+
+    fetch("/api/mapel")
+      .then((res) => res.json())
+      .then((data) =>
+        setMapelOptions(
+          data.map((m: any) => ({
+            nama: m.nama,
+            guruPengampu: Array.isArray(m.guruPengampu) ? m.guruPengampu.join(", ") : m.guruPengampu || "",
+          }))
+        )
+      );
   }, []);
+
+  function toggleMapel(m: string) {
+    setMapelDipilih((prev) => (prev.includes(m) ? prev.filter((x) => x !== m) : [...prev, m]));
+  }
 
   function validate(): FormErrors {
     const newErrors: FormErrors = {};
@@ -72,6 +90,7 @@ export default function TambahKelasPage() {
         waliKelas: wali,
         kapasitas: 36,
         tahunAjaran,
+        mapel: mapelDipilih,
       }),
     });
     setSubmitting(false);
@@ -152,6 +171,38 @@ export default function TambahKelasPage() {
           className={`w-full rounded-xl border bg-black/30 px-4 py-3 text-sm text-gray-200 placeholder-gray-500 outline-none ${errors.tahunAjaran ? "border-red-500/60" : "border-border focus:border-primary/50"}`}
         />
         {errors.tahunAjaran && <p className="mt-1.5 flex items-center gap-1.5 text-xs text-red-400"><AlertCircle size={13} /> {errors.tahunAjaran}</p>}
+
+        <label className="mb-1 mt-8 block text-xs font-medium tracking-wide text-muted">MATA PELAJARAN DI KELAS INI</label>
+        <p className="mb-3 text-xs text-muted">Guru pengampu tiap mapel otomatis bisa mengakses kelas ini.</p>
+
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          {mapelOptions.map((m) => {
+            const aktif = mapelDipilih.includes(m.nama);
+            return (
+              <button
+                key={m.nama}
+                type="button"
+                onClick={() => toggleMapel(m.nama)}
+                className={`flex items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition-colors ${
+                  aktif ? "border-primary/50 bg-primary-soft" : "border-border hover:bg-white/5"
+                }`}
+              >
+                <span
+                  className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border ${
+                    aktif ? "border-primary bg-primary text-bg" : "border-gray-500"
+                  }`}
+                >
+                  {aktif && <Check size={13} />}
+                </span>
+                <span className="min-w-0">
+                  <p className="truncate text-sm font-medium text-white">{m.nama}</p>
+                  <p className="truncate text-xs text-muted">{m.guruPengampu || "Belum ada guru pengampu"}</p>
+                </span>
+              </button>
+            );
+          })}
+          {mapelOptions.length === 0 && <p className="text-sm text-muted">Belum ada mata pelajaran. Tambahkan di menu Guru & Mata Pelajaran.</p>}
+        </div>
 
         <div className="mt-8 flex justify-end gap-3 border-t border-border pt-6">
           <Link href="/kelas-siswa" className="rounded-full border border-border px-6 py-2.5 text-sm font-medium text-gray-300 transition-colors hover:bg-white/5">
